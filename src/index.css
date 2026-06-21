@@ -52,6 +52,15 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  --spacing-margin-mobile: 16px;
+  --spacing-gutter: 24px;
 }
 
 @layer utilities {
@@ -248,7 +257,7 @@ body {
 }
 
 .page-container {
-    max-width: 672px;
+    max-width: 896px;
     margin: 0 auto;
     padding: 24px 16px;
 }

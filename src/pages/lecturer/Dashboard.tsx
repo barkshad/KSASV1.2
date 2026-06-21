@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect, useState, useCallback } from 'react';
-import { Radio, StopCircle, QrCode, PlusCircle, AlertCircle, FileBarChart, Calendar, Loader2 } from 'lucide-react';
+import { Radio, StopCircle, QrCode, AlertCircle, FileBarChart, Calendar, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';

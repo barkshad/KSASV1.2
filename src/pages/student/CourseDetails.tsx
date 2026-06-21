@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { User, QrCode, CheckCircle, Clock, XCircle, Calendar, Loader2, Book } from 'lucide-react';
+import { QrCode, CheckCircle, Clock, XCircle, Calendar, Loader2 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useFirestoreRealtimeCollection } from '../../hooks/useFirestoreRealtime';

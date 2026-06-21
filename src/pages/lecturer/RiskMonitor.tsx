@@ -133,7 +133,50 @@ export default function RiskMonitor() {
 
       {/* At-Risk Student List */}
       <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Mobile card view */}
+        <div className="md:hidden divide-y divide-outline-variant/20">
+          {riskStudents.length === 0 ? (
+            <div className="px-4 py-12 text-center text-on-surface-variant">
+              No at-risk students found. All enrolled students are above the 75% threshold.
+            </div>
+          ) : (
+            riskStudents.map((student) => (
+              <div key={student.id} className="p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-surface-variant flex items-center justify-center text-on-surface-variant font-bold">
+                    {student.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-title-lg text-on-surface truncate">{student.name}</p>
+                    <p className="text-xs text-outline">{student.program}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-on-surface-variant font-body-sm">{student.reg}</span>
+                  <div className="flex items-center gap-1 text-error">
+                    <TrendingDown className="w-4 h-4" />
+                    <span className="text-xs font-bold">{student.trend}%</span>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="flex justify-between items-center">
+                    <span className={`text-xs font-bold ${student.attendance < 50 ? 'text-error' : 'text-amber-600'}`}>{student.attendance}%</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-surface-variant rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${student.attendance < 50 ? 'bg-error' : 'bg-amber-600'}`} style={{ width: `${student.attendance}%` }}></div>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-1">
+                  <button className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"><Eye className="w-5 h-5"/></button>
+                  <button className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"><Mail className="w-5 h-5"/></button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop table view */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-surface-container-low border-b border-outline-variant/30">
               <tr>
