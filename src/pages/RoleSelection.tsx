@@ -4,7 +4,6 @@ import { useAuth } from '../hooks/useAuth';
 import { db, collection, query, where, getDocs } from '../lib/firebase';
 import { hashPassword } from '../lib/auth';
 import {
-  ChevronRight,
   ArrowLeft,
   Lock,
   Mail,
@@ -12,27 +11,37 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
-  Radio,
-  Wifi,
-  Database,
-  Clock,
+  Shield,
+  BookOpen,
+  GraduationCap,
+  ShieldCheck,
 } from 'lucide-react';
 
 const ROLES = [
-  { id: 'admin' as const, label: '01', title: 'ADMINISTRATOR', desc: 'System management & analytics' },
-  { id: 'lecturer' as const, label: '02', title: 'LECTURER', desc: 'Sessions, QR codes & attendance' },
-  { id: 'student' as const, label: '03', title: 'STUDENT', desc: 'Check-in & attendance history' },
+  {
+    id: 'admin' as const,
+    title: 'Administrator',
+    desc: 'System management & analytics',
+    icon: Shield,
+    iconBg: 'bg-crimson',
+  },
+  {
+    id: 'lecturer' as const,
+    title: 'Lecturer',
+    desc: 'Sessions, QR codes & attendance',
+    icon: BookOpen,
+    iconBg: 'bg-gold-muted',
+  },
+  {
+    id: 'student' as const,
+    title: 'Student',
+    desc: 'Check-in & attendance history',
+    icon: GraduationCap,
+    iconBg: 'bg-info',
+  },
 ] as const;
 
 type RoleId = typeof ROLES[number]['id'];
-
-const StatusLine = ({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: string }) => (
-  <div className="flex items-center gap-2">
-    <Icon className="w-3 h-3 text-primary" />
-    <span className="font-mono text-[10px] text-on-surface-variant uppercase tracking-wider">{label}:</span>
-    <span className="font-mono text-[10px] text-on-surface font-medium">{value}</span>
-  </div>
-);
 
 export default function RoleSelection() {
   const navigate = useNavigate();
@@ -101,8 +110,7 @@ export default function RoleSelection() {
 
       setLoginAttempts(0);
       login({ uid: userDoc.id, ...userData });
-      const roleObj = ROLES.find((r) => r.id === selectedRole)!;
-      navigate(`/${roleObj.id}`, { replace: true });
+      navigate(`/${selectedRole}`, { replace: true });
     } catch (err: any) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {
@@ -122,212 +130,406 @@ export default function RoleSelection() {
   const activeRole = ROLES.find((r) => r.id === selectedRole);
 
   return (
-    <div className="min-h-screen bg-surface-container flex flex-col lg:flex-row">
-      {/* ─── LEFT: Selection Grid ──────────────────────────────────── */}
-      <div className="lg:w-[420px] border-r border-outline-variant bg-surface flex flex-col">
-        {/* Header */}
-        <div className="border-b border-outline-variant p-6">
+    <div className="min-h-screen flex flex-col lg:flex-row">
+      {/* ─── Left Panel: Hero ─────────────────────────────────────── */}
+      <div
+        className="relative overflow-hidden flex-shrink-0 lg:w-[42%]"
+        style={{ minWidth: '420px', background: 'var(--color-crimson)' }}
+      >
+        {/* Subtle grid pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `linear-gradient(var(--color-text-primary) 1px, transparent 1px), linear-gradient(90deg, var(--color-text-primary) 1px, transparent 1px)`,
+            backgroundSize: '40px 40px',
+          }}
+        />
+
+        <div className="relative z-10 p-12 lg:p-14 flex flex-col justify-between min-h-[200px] lg:min-h-screen">
+          {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary flex items-center justify-center">
-              <span className="font-mono text-xs font-bold text-white">K</span>
+            <div className="w-10 h-10 flex items-center justify-center">
+              <ShieldCheck className="w-8 h-8" style={{ color: 'var(--color-gold-primary)' }} />
             </div>
             <div>
-              <p className="font-display text-sm font-bold text-on-surface tracking-tight leading-none">KSAS</p>
-              <p className="font-mono text-[9px] text-on-surface-variant uppercase tracking-[0.2em] mt-0.5">Smart Attendance</p>
+              <p
+                className="text-lg font-bold tracking-tight leading-none"
+                style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text-primary)' }}
+              >
+                KSAS
+              </p>
+              <p
+                className="text-[10px] uppercase tracking-[0.2em] mt-0.5"
+                style={{ fontFamily: 'var(--font-body)', color: 'rgba(240,237,232,0.5)' }}
+              >
+                Smart Attendance
+              </p>
             </div>
           </div>
-        </div>
 
-        {/* Status bar */}
-        <div className="border-b border-outline-variant px-6 py-3 flex items-center gap-4">
-          <StatusLine icon={Radio} label="SYS" value="ACTIVE" />
-          <StatusLine icon={Wifi} label="NODE" value="KAB-01" />
-          <StatusLine icon={Clock} label="UTC" value="+3" />
-        </div>
-
-        {/* Role Selection */}
-        <div className="flex-1 flex flex-col">
-          <div className="px-6 pt-6 pb-3">
-            <p className="font-mono text-[10px] text-on-surface-variant uppercase tracking-[0.15em] mb-1">SELECT ROLE</p>
-            <p className="text-xs text-on-surface-variant">Choose your access level to continue.</p>
-          </div>
-
-          <div className="flex-1 px-6 pb-6">
-            {!selectedRole ? (
-              <div className="space-y-0">
-                {ROLES.map((role, i) => (
-                  <button
-                    key={role.id}
-                    onClick={() => setSelectedRole(role.id)}
-                    className="w-full group focus-visible:outline-2 focus-visible:outline-primary"
-                  >
-                    <div className="flex items-stretch border border-outline-variant hover:border-primary transition-colors duration-150">
-                      {/* Number */}
-                      <div className="w-12 bg-surface-container-low border-r border-outline-variant flex items-center justify-center shrink-0">
-                        <span className="font-mono text-xs font-bold text-on-surface-variant group-hover:text-primary transition-colors">
-                          {role.label}
-                        </span>
-                      </div>
-                      {/* Content */}
-                      <div className="flex-1 p-4 flex items-center justify-between">
-                        <div>
-                          <p className="font-display text-sm font-bold text-on-surface group-hover:text-primary transition-colors tracking-tight">
-                            {role.title}
-                          </p>
-                          <p className="text-[11px] text-on-surface-variant mt-0.5">{role.desc}</p>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-outline-variant group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="animate-slide-up">
-                <button
-                  onClick={handleBack}
-                  className="flex items-center gap-1.5 text-[11px] font-mono text-on-surface-variant uppercase tracking-wider mb-5 hover:text-primary transition-colors"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" /> Back to roles
-                </button>
-
-                {activeRole && (
-                  <div className="border border-primary bg-primary-container/30 p-4 mb-6">
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-1">{activeRole.label}</span>
-                      <div>
-                        <p className="font-display text-sm font-bold text-on-surface tracking-tight">{activeRole.title}</p>
-                        <p className="text-[11px] text-on-surface-variant">{activeRole.desc}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {error && (
-                  <div className="flex items-start gap-2.5 p-4 border border-error bg-error-container text-on-error-container mb-5 text-xs font-medium animate-fade-in">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>{error}</span>
-                  </div>
-                )}
-
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="font-mono text-[10px] text-on-surface-variant uppercase tracking-[0.12em] font-medium" htmlFor="email">
-                      Email
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40 pointer-events-none" />
-                      <input
-                        id="email"
-                        type="email"
-                        required
-                        autoComplete="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@kabarak.ac.ke"
-                        style={{ backgroundColor: '#ffffff' }}
-                        className="w-full h-11 pl-10 pr-4 border border-outline-variant text-on-surface text-sm font-mono placeholder:text-outline outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="font-mono text-[10px] text-on-surface-variant uppercase tracking-[0.12em] font-medium" htmlFor="password">
-                      Password
-                    </label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40 pointer-events-none" />
-                      <input
-                        id="password"
-                        type={showPw ? 'text' : 'password'}
-                        required
-                        autoComplete="current-password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Enter password"
-                        style={{ backgroundColor: '#ffffff' }}
-                        className="w-full h-11 pl-10 pr-11 border border-outline-variant text-on-surface text-sm font-mono placeholder:text-outline outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPw((v) => !v)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant/40 hover:text-on-surface transition-colors"
-                        aria-label={showPw ? 'Hide password' : 'Show password'}
-                      >
-                        {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full h-11 bg-primary text-white font-display text-sm font-bold uppercase tracking-wider hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" /> Authenticating...
-                      </>
-                    ) : (
-                      'Sign In'
-                    )}
-                  </button>
-                </form>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ─── RIGHT: Info Panel ────────────────────────────────────── */}
-      <div className="hidden lg:flex flex-col flex-1 bg-surface">
-        {/* Top bar */}
-        <div className="border-b border-outline-variant px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Database className="w-3.5 h-3.5 text-on-surface-variant" />
-            <span className="font-mono text-[10px] text-on-surface-variant uppercase tracking-wider">Firebase Connected</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-            <span className="font-mono text-[10px] text-on-surface-variant uppercase tracking-wider">Secure</span>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 flex flex-col justify-center px-16 py-12">
-          <div className="max-w-lg">
-            <p className="font-mono text-[10px] text-primary uppercase tracking-[0.2em] font-bold mb-4">KABARAK UNIVERSITY</p>
-            <h1 className="font-display text-4xl font-bold text-on-surface leading-[1.1] tracking-tight mb-4">
-              Attendance,<br />
-              <span className="text-primary">made intelligent.</span>
+          {/* Hero text */}
+          <div className="hidden lg:block mt-auto">
+            <h1
+              className="font-display-hero mb-6"
+              style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-display)' }}
+            >
+              Attendance,<br />made intelligent.
             </h1>
-            <p className="text-sm text-on-surface-variant leading-relaxed mb-10 max-w-sm">
-              QR-based check-in with real-time sync, device verification, and institutional analytics.
+            <p
+              className="font-body-lg max-w-sm mb-12"
+              style={{ color: 'rgba(240,237,232,0.6)', fontFamily: 'var(--font-body)' }}
+            >
+              QR-based check-in with real-time sync, device verification, and institutional analytics — built for Kabarak University.
             </p>
 
             {/* Feature list */}
-            <div className="border-l border-outline-variant pl-6 space-y-5">
+            <div className="space-y-4">
               {[
-                { num: '01', title: 'Rotating QR Codes', desc: 'Token refreshes every 30 seconds' },
-                { num: '02', title: 'Device-Bound Check-In', desc: 'Prevents proxy attendance' },
-                { num: '03', title: 'Real-Time Sync', desc: 'Instant updates across all devices' },
+                { title: 'Rotating QR Codes', desc: 'Token refreshes every 30 seconds' },
+                { title: 'Device-Bound Check-In', desc: 'Prevents proxy attendance' },
+                { title: 'Real-Time Sync', desc: 'Instant updates across all devices' },
               ].map((f) => (
-                <div key={f.num} className="flex items-start gap-4">
-                  <span className="font-mono text-[10px] text-outline font-bold mt-0.5">{f.num}</span>
+                <div key={f.title} className="flex items-start gap-3">
+                  <div
+                    className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0"
+                    style={{ background: 'var(--color-gold-primary)' }}
+                  />
                   <div>
-                    <p className="text-sm font-bold text-on-surface">{f.title}</p>
-                    <p className="text-xs text-on-surface-variant mt-0.5">{f.desc}</p>
+                    <p
+                      className="text-sm font-medium"
+                      style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-body)' }}
+                    >
+                      {f.title}
+                    </p>
+                    <p
+                      className="text-xs mt-0.5"
+                      style={{ color: 'rgba(240,237,232,0.5)', fontFamily: 'var(--font-body)' }}
+                    >
+                      {f.desc}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Bottom bar */}
-        <div className="border-t border-outline-variant px-8 py-4 flex items-center justify-between">
-          <span className="font-mono text-[10px] text-on-surface-variant uppercase tracking-wider">KSAS v1.0</span>
-          <span className="font-mono text-[10px] text-on-surface-variant uppercase tracking-wider">&copy; 2026 Kabarak University</span>
+      {/* ─── Right Panel: Auth ────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col justify-center p-10 lg:p-14">
+        <div className="w-full max-w-md mx-auto">
+          {!selectedRole ? (
+            /* ── Role Selection ────────────────────────────────── */
+            <div className="animate-fade-in">
+              <div className="mb-8">
+                <h2
+                  className="font-editorial-lg mb-2"
+                  style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-editorial)' }}
+                >
+                  Sign in to KSAS
+                </h2>
+                <p
+                  className="font-body-md"
+                  style={{ color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}
+                >
+                  Select your role to continue.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {ROLES.map((role) => {
+                  const Icon = role.icon;
+                  return (
+                    <button
+                      key={role.id}
+                      onClick={() => setSelectedRole(role.id)}
+                      className="w-full group focus-visible:outline-2 focus-visible:outline-gold-primary"
+                      style={{ padding: 0 }}
+                    >
+                      <div
+                        className="flex items-center gap-5 p-5 transition-all duration-150"
+                        style={{
+                          background: 'var(--color-bg-surface)',
+                          border: '0.5px solid var(--color-bg-border)',
+                          borderRadius: 'var(--radius-xl)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--color-gold-muted)';
+                          e.currentTarget.style.background = 'var(--color-bg-elevated)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--color-bg-border)';
+                          e.currentTarget.style.background = 'var(--color-bg-surface)';
+                        }}
+                      >
+                        <div
+                          className="w-12 h-12 flex items-center justify-center shrink-0"
+                          style={{
+                            background:
+                              role.id === 'admin'
+                                ? 'var(--color-crimson)'
+                                : role.id === 'lecturer'
+                                ? 'var(--color-gold-subtle)'
+                                : 'var(--color-info-bg)',
+                            borderRadius: 'var(--radius-lg)',
+                          }}
+                        >
+                          <Icon
+                            className="w-6 h-6"
+                            style={{
+                              color:
+                                role.id === 'admin'
+                                  ? '#F4A0A8'
+                                  : role.id === 'lecturer'
+                                  ? 'var(--color-gold-primary)'
+                                  : 'var(--color-info)',
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1 text-left min-w-0">
+                          <p
+                            className="text-base font-bold"
+                            style={{
+                              fontFamily: 'var(--font-display)',
+                              color: 'var(--color-text-primary)',
+                              letterSpacing: '-0.02em',
+                            }}
+                          >
+                            {role.title}
+                          </p>
+                          <p
+                            className="text-xs mt-0.5"
+                            style={{ color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}
+                          >
+                            {role.desc}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <p
+                className="text-center font-body-sm mt-8"
+                style={{ color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-body)' }}
+              >
+                Your account is created by your institution administrator.
+              </p>
+            </div>
+          ) : (
+            /* ── Login Form ────────────────────────────────────── */
+            <div className="animate-slide-up">
+              <button
+                onClick={handleBack}
+                className="flex items-center gap-1.5 font-body-sm mb-8 transition-colors"
+                style={{
+                  color: 'var(--color-text-secondary)',
+                  fontFamily: 'var(--font-body)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--color-gold-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--color-text-secondary)';
+                }}
+              >
+                <ArrowLeft className="w-4 h-4" /> Change role
+              </button>
+
+              {activeRole && (
+                <div
+                  className="flex items-center gap-4 p-5 mb-8"
+                  style={{
+                    background: 'var(--color-bg-surface)',
+                    border: '0.5px solid var(--color-bg-border)',
+                    borderRadius: 'var(--radius-xl)',
+                  }}
+                >
+                  <div
+                    className="w-12 h-12 flex items-center justify-center shrink-0"
+                    style={{
+                      background:
+                        activeRole.id === 'admin'
+                          ? 'var(--color-crimson)'
+                          : activeRole.id === 'lecturer'
+                          ? 'var(--color-gold-subtle)'
+                          : 'var(--color-info-bg)',
+                      borderRadius: 'var(--radius-lg)',
+                    }}
+                  >
+                    <activeRole.icon
+                      className="w-6 h-6"
+                      style={{
+                        color:
+                          activeRole.id === 'admin'
+                            ? '#F4A0A8'
+                            : activeRole.id === 'lecturer'
+                            ? 'var(--color-gold-primary)'
+                            : 'var(--color-info)',
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <p
+                      className="text-base font-bold"
+                      style={{
+                        fontFamily: 'var(--font-display)',
+                        color: 'var(--color-text-primary)',
+                        letterSpacing: '-0.02em',
+                      }}
+                    >
+                      {activeRole.title}
+                    </p>
+                    <p
+                      className="text-xs mt-0.5"
+                      style={{ color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}
+                    >
+                      Sign in to your account
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              <div className="mb-8">
+                <h2
+                  className="font-editorial-lg"
+                  style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-editorial)' }}
+                >
+                  Welcome back
+                </h2>
+                <p
+                  className="font-body-md mt-1"
+                  style={{ color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}
+                >
+                  Enter your credentials to continue.
+                </p>
+              </div>
+
+              {error && (
+                <div
+                  className="flex items-start gap-3 p-4 mb-6 font-body-sm animate-fade-in"
+                  style={{
+                    background: 'var(--color-danger-bg)',
+                    border: '0.5px solid var(--color-danger)',
+                    borderRadius: 'var(--radius-md)',
+                    color: '#F4A0A8',
+                  }}
+                >
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleLogin} className="space-y-5">
+                <div className="space-y-2">
+                  <label
+                    className="form-label"
+                    htmlFor="email"
+                    style={{ color: 'var(--color-text-secondary)' }}
+                  >
+                    Email
+                  </label>
+                  <div className="relative">
+                    <Mail
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                      style={{ color: 'var(--color-text-tertiary)' }}
+                    />
+                    <input
+                      id="email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@kabarak.ac.ke"
+                      className="input-with-icon-l"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    className="form-label"
+                    htmlFor="password"
+                    style={{ color: 'var(--color-text-secondary)' }}
+                  >
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock
+                      className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                      style={{ color: 'var(--color-text-tertiary)' }}
+                    />
+                    <input
+                      id="password"
+                      type={showPw ? 'text' : 'password'}
+                      required
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter password"
+                      className="input-with-icon-l"
+                      style={{ paddingRight: '44px' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPw((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                      style={{
+                        color: 'var(--color-text-tertiary)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = 'var(--color-text-primary)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = 'var(--color-text-tertiary)';
+                      }}
+                      aria-label={showPw ? 'Hide password' : 'Show password'}
+                    >
+                      {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-primary w-full mt-2"
+                  style={{
+                    height: '48px',
+                    fontFamily: 'var(--font-body)',
+                    fontWeight: 500,
+                    fontSize: '14px',
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Authenticating...
+                    </>
+                  ) : (
+                    'Sign In'
+                  )}
+                </button>
+              </form>
+
+              <p
+                className="text-center font-body-sm mt-8"
+                style={{ color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-body)' }}
+              >
+                Account access issues? Contact your institution's IT support.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
