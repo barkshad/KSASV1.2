@@ -13,7 +13,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   Users, CheckCircle, Loader2, Clock, AlertCircle,
-  Wifi, WifiOff, RefreshCw, RotateCcw, Download,
+  Wifi, WifiOff, RefreshCw, RotateCcw, Download, Bookmark,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { db, doc, collection, onSnapshot, updateDoc } from '../../lib/firebase';
@@ -153,6 +153,7 @@ export default function LiveSession() {
       courseName: sessionData.courseName || '',
       room: sessionData.room || '',
       lecturerName: sessionData.lecturerName || '',
+      topicOfDay: sessionData.topicOfDay || '',
     }));
 
     const csv = buildAttendanceCsv(rows);
@@ -223,6 +224,31 @@ export default function LiveSession() {
               {sessionData.courseCode} &nbsp;·&nbsp; Room {sessionData.room} &nbsp;·&nbsp;
               {sessionData.startTime}–{sessionData.endTime}
             </p>
+            {sessionData.topicOfDay && (
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'var(--gold-subtle)',
+                  border: '0.5px solid var(--gold-muted)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '4px 10px',
+                  fontFamily: 'Outfit, sans-serif',
+                  fontSize: '12px',
+                  fontWeight: 400,
+                  color: 'var(--gold-primary)',
+                  marginTop: '8px',
+                  maxWidth: '420px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <Bookmark className="w-4 h-4 shrink-0" style={{ color: 'var(--gold-primary)' }} />
+                <span>{sessionData.topicOfDay.length > 60 ? sessionData.topicOfDay.slice(0, 60) + '…' : sessionData.topicOfDay}</span>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2 flex-wrap">
