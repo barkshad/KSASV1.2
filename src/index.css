@@ -171,6 +171,13 @@ body {
 }
 
 /* ── Layout ─────────────────────────────────────────────────── */
+
+/* Root width safety — prevent flex containers from collapsing */
+html, body, #root {
+  width: 100%;
+  min-width: 0;
+}
+
 .sidebar {
     position: fixed;
     left: 0;
