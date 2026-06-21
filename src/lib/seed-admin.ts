@@ -8,7 +8,7 @@ import { hashPassword } from './auth';
 
 const ADMIN_EMAIL = 'admin@kabarak.ac.ke';
 const ADMIN_UID = 'admin_default';
-const ADMIN_PW_HASH = hashPassword('Ksas@Admin2024!');
+const ADMIN_PW_HASH = hashPassword('Mwahanga@1');
 
 export async function seedAdminIfNotExists() {
   try {

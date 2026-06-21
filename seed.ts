@@ -8,7 +8,7 @@ async function seedAdmin() {
       uid: 'admin_default',
       name: 'System Administrator',
       email: 'admin@kabarak.ac.ke',
-      password: hashPassword('Ksas@Admin2024!'),
+      password: hashPassword('Mwahanga@1'),
       role: 'admin',
       status: 'active',
       createdAt: serverTimestamp()

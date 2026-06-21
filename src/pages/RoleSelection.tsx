@@ -225,7 +225,8 @@ export default function RoleSelection() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="you@kabarak.ac.ke"
-                        className="w-full h-11 pl-10 pr-4 border border-outline-variant bg-surface text-on-surface text-sm font-mono placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                        style={{ backgroundColor: '#ffffff' }}
+                        className="w-full h-11 pl-10 pr-4 border border-outline-variant text-on-surface text-sm font-mono placeholder:text-outline outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                       />
                     </div>
                   </div>
@@ -244,7 +245,8 @@ export default function RoleSelection() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Enter password"
-                        className="w-full h-11 pl-10 pr-11 border border-outline-variant bg-surface text-on-surface text-sm font-mono placeholder:text-outline focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-colors"
+                        style={{ backgroundColor: '#ffffff' }}
+                        className="w-full h-11 pl-10 pr-11 border border-outline-variant text-on-surface text-sm font-mono placeholder:text-outline outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-colors"
                       />
                       <button
                         type="button"
