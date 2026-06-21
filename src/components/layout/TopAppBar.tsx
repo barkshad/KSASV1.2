@@ -37,10 +37,13 @@ export function TopAppBar({ role, user }: TopAppBarProps) {
     <header className="top-bar px-4 md:px-6">
       {/* Mobile brand */}
       <div className="flex items-center gap-2 md:hidden">
-        <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-          <ShieldCheck className="w-4.5 h-4.5 text-white" style={{ width: 18, height: 18 }} />
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center"
+          style={{ background: 'var(--crimson)' }}
+        >
+          <ShieldCheck className="w-4 h-4" style={{ width: 18, height: 18, color: '#F4A0A8' }} />
         </div>
-        <span className="font-bold text-primary text-base" style={{ fontFamily: 'Space Grotesk, Inter, sans-serif' }}>KSAS</span>
+        <span className="text-base font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>KSAS</span>
       </div>
 
       {/* Desktop: empty left (sidebar has branding) */}
@@ -56,7 +59,7 @@ export function TopAppBar({ role, user }: TopAppBarProps) {
         >
           <Bell className="w-5 h-5" />
           {hasNotifs && (
-            <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full ring-2 ring-surface" />
+            <span className="absolute top-2 right-2 w-2 h-2 rounded-full" style={{ background: 'var(--danger)', boxShadow: '0 0 0 2px var(--bg-surface)' }} />
           )}
         </button>
 
@@ -65,35 +68,64 @@ export function TopAppBar({ role, user }: TopAppBarProps) {
           <button
             onClick={() => setMenuOpen(v => !v)}
             className={cn(
-              'flex items-center gap-2 rounded-full transition-all h-10 px-2',
-              menuOpen ? 'bg-surface-container' : 'hover:bg-surface-container'
+              'flex items-center gap-2 rounded-full transition-all h-10 px-2'
             )}
+            style={{
+              background: menuOpen ? 'var(--bg-elevated)' : 'transparent',
+            }}
+            onMouseEnter={(e) => {
+              if (!menuOpen) e.currentTarget.style.background = 'var(--bg-elevated)';
+            }}
+            onMouseLeave={(e) => {
+              if (!menuOpen) e.currentTarget.style.background = 'transparent';
+            }}
             aria-expanded={menuOpen}
             aria-label="Account menu"
           >
-            <div className="w-8 h-8 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center justify-center border-2 border-primary-container">
+            <div
+              className="w-8 h-8 rounded-full font-bold text-xs flex items-center justify-center"
+              style={{
+                background: 'var(--gold-primary)',
+                color: 'var(--text-inverse)',
+                border: '2px solid var(--gold-muted)',
+              }}
+            >
               {getInitials(user?.name)}
             </div>
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-12 w-56 bg-surface rounded-2xl shadow-xl border border-outline-variant/20 overflow-hidden z-50 animate-scale-in">
-              <div className="px-4 py-3.5 border-b border-outline-variant/15 bg-surface-container-low">
-                <p className="font-bold text-on-surface text-sm truncate">{user?.name || 'User'}</p>
-                <p className="text-xs text-on-surface-variant capitalize mt-0.5">{ROLE_LABELS[role]}</p>
+            <div
+              className="absolute right-0 top-12 w-56 overflow-hidden z-50 animate-scale-in"
+              style={{
+                background: 'var(--bg-surface)',
+                borderRadius: 'var(--radius-xl)',
+                border: '0.5px solid var(--bg-border)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 0 0.5px var(--bg-border)',
+              }}
+            >
+              <div className="px-4 py-3.5" style={{ borderBottom: '0.5px solid var(--bg-border)', background: 'var(--bg-elevated)' }}>
+                <p className="font-bold text-sm truncate" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}>{user?.name || 'User'}</p>
+                <p className="text-xs capitalize mt-0.5" style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>{ROLE_LABELS[role]}</p>
               </div>
               <div className="py-1">
                 <button
                   onClick={() => { navigate(profilePath); setMenuOpen(false); }}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-on-surface hover:bg-surface-container transition-colors"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors"
+                  style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-body)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-elevated)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
                 >
-                  <User className="w-4 h-4 text-on-surface-variant" />
+                  <User className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
                   Profile & Settings
                 </button>
-                <div className="mx-3 my-1 h-px bg-outline-variant/20" />
+                <div className="mx-3 my-1" style={{ height: '1px', background: 'var(--bg-border)' }} />
                 <button
                   onClick={() => { logout(); setMenuOpen(false); }}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-error hover:bg-error-container/15 transition-colors font-semibold"
+                  className="w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors"
+                  style={{ color: '#F4A0A8', fontFamily: 'var(--font-body)', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--danger-bg)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
                 >
                   <LogOut className="w-4 h-4" />
                   Sign Out

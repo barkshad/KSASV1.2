@@ -133,8 +133,8 @@ export default function RoleSelection() {
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* ─── Left Panel: Hero ─────────────────────────────────────── */}
       <div
-        className="relative overflow-hidden flex-shrink-0 lg:w-[42%]"
-        style={{ minWidth: '420px', background: 'var(--color-crimson)' }}
+        className="relative overflow-hidden flex-shrink-0 w-full lg:w-[640px]"
+        style={{ background: 'var(--color-crimson)' }}
       >
         {/* Subtle grid pattern */}
         <div
@@ -145,7 +145,7 @@ export default function RoleSelection() {
           }}
         />
 
-        <div className="relative z-10 p-12 lg:p-14 flex flex-col justify-between min-h-[200px] lg:min-h-screen">
+          <div className="relative z-10 px-8 py-10 lg:px-14 lg:py-12 flex flex-col justify-between min-h-[200px] lg:min-h-screen">
           {/* Logo */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 flex items-center justify-center">
@@ -216,7 +216,7 @@ export default function RoleSelection() {
       </div>
 
       {/* ─── Right Panel: Auth ────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col justify-center p-10 lg:p-14">
+      <div className="flex-1 flex flex-col justify-center p-10 lg:px-20 lg:py-16">
         <div className="w-full max-w-md mx-auto">
           {!selectedRole ? (
             /* ── Role Selection ────────────────────────────────── */

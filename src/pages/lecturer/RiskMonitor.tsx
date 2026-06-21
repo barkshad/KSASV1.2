@@ -119,15 +119,15 @@ export default function RiskMonitor() {
       <div className="flex flex-wrap gap-4 mb-lg">
         <button className="px-6 py-2 rounded-full border border-error bg-error/5 text-error font-bold flex items-center gap-2">
           High Risk (&lt;50%)
-          <span className="bg-error text-white text-[10px] px-2 py-0.5 rounded-full">{highRisk}</span>
+          <span className="bg-error text-on-error text-[10px] px-2 py-0.5 rounded-full">{highRisk}</span>
         </button>
-        <button className="px-6 py-2 rounded-full border border-amber-600 bg-amber-50 text-amber-700 font-bold flex items-center gap-2">
+        <button className="px-6 py-2 rounded-full border border-warning bg-warning-bg text-warning font-bold flex items-center gap-2">
           Medium Risk (50-75%)
-          <span className="bg-amber-600 text-white text-[10px] px-2 py-0.5 rounded-full">{medRisk}</span>
+          <span className="bg-warning text-[10px] px-2 py-0.5 rounded-full" style={{color: 'var(--color-text-inverse)'}}>{medRisk}</span>
         </button>
         <button className="px-6 py-2 rounded-full border border-success bg-success/5 text-success font-bold flex items-center gap-2">
           Low Risk (&gt;75%)
-          <span className="bg-success text-white text-[10px] px-2 py-0.5 rounded-full">{lowRisk}</span>
+          <span className="bg-success text-on-success text-[10px] px-2 py-0.5 rounded-full">{lowRisk}</span>
         </button>
       </div>
 
@@ -160,15 +160,15 @@ export default function RiskMonitor() {
                 </div>
                 <div className="flex flex-col gap-1">
                   <div className="flex justify-between items-center">
-                    <span className={`text-xs font-bold ${student.attendance < 50 ? 'text-error' : 'text-amber-600'}`}>{student.attendance}%</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-surface-variant rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full ${student.attendance < 50 ? 'bg-error' : 'bg-amber-600'}`} style={{ width: `${student.attendance}%` }}></div>
-                  </div>
-                </div>
-                <div className="flex justify-end gap-2 pt-1">
-                  <button className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"><Eye className="w-5 h-5"/></button>
-                  <button className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"><Mail className="w-5 h-5"/></button>
+                    <span className={`text-xs font-bold ${student.attendance < 50 ? 'text-error' : 'text-warning'}`}>{student.attendance}%</span>
+                   </div>
+                   <div className="h-1.5 w-full bg-surface-variant rounded-full overflow-hidden">
+                     <div className={`h-full rounded-full ${student.attendance < 50 ? 'bg-error' : 'bg-warning'}`} style={{ width: `${student.attendance}%` }}></div>
+                   </div>
+                 </div>
+                 <div className="flex justify-end gap-2 pt-1">
+                   <button className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"><Eye className="w-5 h-5"/></button>
+                   <button className="p-2 text-warning hover:bg-warning-bg rounded-lg transition-colors"><Mail className="w-5 h-5"/></button>
                 </div>
               </div>
             ))
@@ -211,9 +211,9 @@ export default function RiskMonitor() {
                     <td className="px-6 py-4 text-on-surface-variant font-body-sm">{student.reg}</td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col gap-1 w-32">
-                        <span className={`text-xs font-bold ${student.attendance < 50 ? 'text-error' : 'text-amber-600'}`}>{student.attendance}%</span>
+                        <span className={`text-xs font-bold ${student.attendance < 50 ? 'text-error' : 'text-warning'}`}>{student.attendance}%</span>
                         <div className="h-1.5 w-full bg-surface-variant rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full ${student.attendance < 50 ? 'bg-error' : 'bg-amber-600'}`} style={{ width: `${student.attendance}%` }}></div>
+                          <div className={`h-full rounded-full ${student.attendance < 50 ? 'bg-error' : 'bg-warning'}`} style={{ width: `${student.attendance}%` }}></div>
                         </div>
                       </div>
                     </td>
@@ -226,7 +226,7 @@ export default function RiskMonitor() {
                     <td className="px-6 py-4">
                       <div className="flex justify-end gap-2">
                         <button className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"><Eye className="w-5 h-5"/></button>
-                        <button className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"><Mail className="w-5 h-5"/></button>
+                        <button className="p-2 text-warning hover:bg-warning-bg rounded-lg transition-colors"><Mail className="w-5 h-5"/></button>
                       </div>
                     </td>
                   </tr>

@@ -150,7 +150,7 @@ export default function CourseDetails() {
         <div className="bg-surface-container-lowest rounded-xl shadow-sm p-md border border-surface-variant flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-label-md text-on-surface-variant">Late</h3>
-            <Clock className="w-5 h-5 text-[#F59E0B]" />
+            <Clock className="w-5 h-5 text-warning" />
           </div>
           <span className="font-headline-lg text-primary">{stats.late}</span>
           <span className="font-body-sm text-outline">Sessions</span>

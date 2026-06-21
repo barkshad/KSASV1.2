@@ -57,24 +57,33 @@ export function MobileNav({ role }: MobileNavProps) {
           >
             {({ isActive }) => (
               <>
-                <div className={cn(
-                  'relative flex items-center justify-center rounded-2xl transition-all duration-200',
-                  highlight
-                    ? isActive
-                      ? 'w-12 h-8 bg-primary shadow-md'
-                      : 'w-12 h-8 bg-primary-container'
-                    : 'w-8 h-8',
-                  isActive && !highlight && 'bg-primary-container/30'
-                )}>
+                <div
+                  className="relative flex items-center justify-center transition-all duration-200"
+                  style={{
+                    borderRadius: highlight ? 'var(--radius-md)' : 'var(--radius-md)',
+                    width: highlight ? '48px' : '32px',
+                    height: highlight ? '32px' : '32px',
+                    background: highlight
+                      ? isActive
+                        ? 'var(--gold-primary)'
+                        : 'var(--gold-subtle)'
+                      : isActive
+                        ? 'var(--gold-glow)'
+                        : 'transparent',
+                  }}
+                >
                   <Icon
-                    style={{ width: 20, height: 20 }}
-                    className={cn(
-                      'transition-colors',
-                      highlight ? (isActive ? 'text-white' : 'text-primary') : ''
-                    )}
+                    style={{ width: 20, height: 20, color: highlight ? (isActive ? 'var(--text-inverse)' : 'var(--gold-primary)') : (isActive ? 'var(--gold-primary)' : 'var(--text-tertiary)') }}
                   />
                 </div>
-                <span className={cn('text-[10px] font-semibold mt-0.5 transition-colors', isActive ? 'text-primary' : 'text-on-surface-variant')}>
+                <span
+                  className="text-[10px] mt-0.5 transition-colors"
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontWeight: 500,
+                    color: isActive ? 'var(--gold-primary)' : 'var(--text-tertiary)',
+                  }}
+                >
                   {label}
                 </span>
               </>

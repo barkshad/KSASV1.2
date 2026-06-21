@@ -36,7 +36,7 @@ export default function Profile() {
 
   const pwStrength = newPw.length === 0 ? 0 : newPw.length < 6 ? 1 : newPw.length < 10 ? 2 : newPw.length < 14 ? 3 : 4;
   const pwStrengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong'][pwStrength];
-  const pwStrengthColor = ['', 'bg-error', 'bg-secondary', 'bg-amber-500', 'bg-green-500'][pwStrength];
+  const pwStrengthColor = ['', 'bg-error', 'bg-secondary', 'bg-warning', 'bg-success'][pwStrength];
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +84,7 @@ export default function Profile() {
           {/* Avatar */}
           <div className="relative">
             <div className="avatar-xl text-2xl">{initials}</div>
-            <button className="absolute -bottom-1 -right-1 w-7 h-7 bg-primary text-white rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform">
+            <button className="absolute -bottom-1 -right-1 w-7 h-7 bg-primary text-on-primary rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform">
               <Camera className="w-3.5 h-3.5" />
             </button>
           </div>
@@ -140,7 +140,7 @@ export default function Profile() {
           {profileMsg && (
             <div className={cn(
               'flex items-center gap-2.5 p-3.5 rounded-xl mb-5 text-sm font-medium animate-fade-in',
-              profileMsg.type === 'ok' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-error-container text-on-error-container'
+              profileMsg.type === 'ok' ? 'bg-success-container/30 text-success border border-success/30' : 'bg-error-container text-on-error-container'
             )}>
               {profileMsg.type === 'ok' ? <CheckCircle className="w-4 h-4 shrink-0" /> : <X className="w-4 h-4 shrink-0" />}
               {profileMsg.text}
@@ -208,7 +208,7 @@ export default function Profile() {
           {pwMsg && (
             <div className={cn(
               'flex items-center gap-2.5 p-3.5 rounded-xl mb-5 text-sm font-medium animate-fade-in',
-              pwMsg.type === 'ok' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-error-container text-on-error-container'
+              pwMsg.type === 'ok' ? 'bg-success-container/30 text-success border border-success/30' : 'bg-error-container text-on-error-container'
             )}>
               {pwMsg.type === 'ok' ? <CheckCircle className="w-4 h-4 shrink-0" /> : <X className="w-4 h-4 shrink-0" />}
               {pwMsg.text}
