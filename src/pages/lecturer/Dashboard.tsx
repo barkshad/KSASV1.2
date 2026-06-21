@@ -37,7 +37,7 @@ export default function LecturerDashboard() {
     return () => unsubscribe();
   }, [activeSession?.id]);
 
-  const handleStartSession = async (courseCode: string, courseName: string, room: string) => {
+  const handleStartSession = async (courseCode: string, courseName: string, room: string, topicOfDay: string = '') => {
     setStarting(true);
     try {
       const secret = generateSessionTOTPSecret();
@@ -55,7 +55,8 @@ export default function LecturerDashboard() {
         status: 'open',
         totpSecret: secret,
         enrolledCount: 50,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        topicOfDay
       });
 
       navigate(`/lecturer/live?sessionId=${newSessionRef.id}`);
