@@ -236,7 +236,8 @@ export default function LecturerDashboard() {
                   handleStartSession(
                     fd.get('code') as string,
                     fd.get('name') as string,
-                    fd.get('room') as string
+                    fd.get('room') as string,
+                    (fd.get('topic') as string) || ''
                   );
                 }}
                 className="space-y-4"
@@ -252,25 +253,52 @@ export default function LecturerDashboard() {
                   </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Course Name</label>
-                  <input name="name" required placeholder="e.g. Data Structures & Algorithms" className="input-base" />
-                </div>
-                <button
-                  type="submit"
-                  disabled={starting}
-                  className="btn-primary w-full h-12 text-sm disabled:opacity-60"
-                >
-                  {starting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" /> Starting...
-                    </>
-                  ) : (
-                    <>
-                      <Radio className="w-4 h-4" />
-                      Start Session
-                    </>
-                  )}
-                </button>
+                    <label className="form-label">Course Name</label>
+                    <input name="name" required placeholder="e.g. Data Structures & Algorithms" className="input-base" />
+                  </div>
+                  <div className="form-group">
+                    <label className="font-label-md uppercase tracking-widest" style={{ color: 'var(--color-text-tertiary)' }}>Topic of Day</label>
+                    <input
+                      name="topic"
+                      maxLength={120}
+                      placeholder="e.g. Constitutional Law — Chapter 3"
+                      style={{
+                        fontFamily: 'Outfit, sans-serif',
+                        fontSize: '14px',
+                        background: 'var(--bg-surface)',
+                        border: '0.5px solid var(--bg-border)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '10px 14px',
+                        width: '100%',
+                        color: 'var(--text-primary)',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--gold-muted)'; }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--bg-border)'; }}
+                      onChange={(e) => {
+                        const next = e.currentTarget.nextElementSibling;
+                        if (next) next.textContent = `${e.currentTarget.value.length} / 120`;
+                      }}
+                    />
+                    <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: '11px', color: 'var(--text-tertiary)', textAlign: 'right', marginTop: '4px' }}>0 / 120</div>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={starting}
+                    className="btn-primary w-full h-12 text-sm disabled:opacity-60"
+                  >
+                    {starting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" /> Starting...
+                      </>
+                    ) : (
+                      <>
+                        <Radio className="w-4 h-4" />
+                        Start Session
+                      </>
+                    )}
+                  </button>
               </form>
             </>
           )}
