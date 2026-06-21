@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bell, LogOut, User, ShieldCheck, Menu, X } from 'lucide-react';
+import { Bell, LogOut, User, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { cn } from '../../lib/utils';

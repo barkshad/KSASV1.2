@@ -3,8 +3,8 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import {
   LayoutDashboard, School, BarChart, Calendar, Settings,
-  BookOpen, Clock, Users, FileText, LogOut, ShieldCheck,
-  QrCode, AlertTriangle, UserCircle
+  BookOpen, Users, FileText, LogOut, ShieldCheck,
+  QrCode, AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 

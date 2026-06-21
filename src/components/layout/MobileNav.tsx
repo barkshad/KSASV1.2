@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import {
   LayoutDashboard, School, QrCode, BarChart, User,
-  BookOpen, Clock, AlertTriangle, Users, Settings, LogOut
+  BookOpen, AlertTriangle, Users, Settings
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 

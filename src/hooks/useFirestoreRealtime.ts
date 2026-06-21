@@ -30,12 +30,12 @@ export function useFirestoreRealtimeDocument(collectionName: string, docId: stri
   return { data, loading };
 }
 
-export function useFirestoreRealtimeCollection(collectionPath: string, conditions: any[] = []) {
+export function useFirestoreRealtimeCollection(collectionPath: string) {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let q = query(collection(db, collectionPath));
+    const q = query(collection(db, collectionPath));
     // Simplistic condition apply
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
