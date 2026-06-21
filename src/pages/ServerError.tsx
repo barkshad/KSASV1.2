@@ -6,26 +6,30 @@ export default function ServerError() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background text-on-background flex flex-col items-center justify-center p-4">
-      <div className="text-center space-y-6 max-w-md animate-in fade-in zoom-in duration-500">
-        <h1 className="text-[120px] leading-none font-display-lg text-error font-bold opacity-20">500</h1>
-        <div className="space-y-2">
-          <h2 className="font-headline-lg font-bold">Server Error</h2>
-          <p className="font-body-md text-on-surface-variant">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: 'var(--bg-base)' }}>
+      <div className="text-center max-w-md animate-fade-in">
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '120px', lineHeight: 1, fontWeight: 900, color: 'var(--danger)', opacity: 0.2 }}>
+          500
+        </h1>
+        <div className="mt-4">
+          <h2 style={{ fontFamily: 'var(--font-editorial)', fontSize: '28px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+            Server Error
+          </h2>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--text-secondary)', fontWeight: 300, marginTop: '8px' }}>
             Something went wrong on our end. Please try again later.
           </p>
         </div>
         <div className="flex gap-4 mt-8">
           <button 
             onClick={() => window.location.reload()}
-            className="flex-1 flex items-center justify-center gap-2 h-12 bg-surface-container-highest border border-outline-variant text-on-surface rounded-xl font-bold hover:bg-surface-variant transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 h-12 btn-ghost"
           >
             <RefreshCcw className="w-5 h-5" />
             Try Again
           </button>
           <button 
             onClick={() => navigate('/')}
-            className="flex-1 flex items-center justify-center gap-2 h-12 bg-primary text-on-primary rounded-xl font-bold hover:bg-primary-container transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 h-12 btn-primary"
           >
             <Home className="w-5 h-5" />
             Go Home
