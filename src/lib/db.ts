@@ -1,15 +1,10 @@
 import { db, collection, doc, setDoc, getDocs, getDoc, updateDoc, runTransaction, serverTimestamp, query, where } from './firebase';
 import { uploadJSONToCloudinary, fetchJSONFromCloudinary } from './cloudinary';
 import { validateCheckIn, CheckInSecurityContext, SessionSecurityConfig } from './security';
+import { collections } from './collections';
 
-export const collections = {
-  USERS: 'users',
-  SESSIONS: 'sessions',
-  COURSES: 'courses',
-  ENROLLMENTS: 'enrollments',
-  AUDIT_LOGS: 'audit_logs',
-  FEEDBACK: 'feedback',
-};
+// Re-export for backward compatibility
+export { collections };
 
 export async function logAudit(user: any, actionType: string, entity: string, details: string) {
   const logRef = doc(collection(db, collections.AUDIT_LOGS));

@@ -4,7 +4,7 @@ import { Radio, StopCircle, QrCode, AlertCircle, FileBarChart, Calendar, Loader2
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart, Line, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { useAuth } from '../../hooks/useAuth';
 import { useFirestoreRealtimeCollection } from '../../hooks/useFirestoreRealtime';
@@ -712,6 +712,7 @@ export default function LecturerDashboard() {
 function AnalyticsSection({ sessions, userId }: { sessions: any[]; userId?: string }) {
   const [feedbackList, setFeedbackList] = useState<any[]>([]);
   const [loadingFeedback, setLoadingFeedback] = useState(true);
+  const [allSessionsForAvg, setAllSessionsForAvg] = useState<any[]>([]);
 
   useEffect(() => {
     if (!userId) return;
@@ -729,6 +730,15 @@ function AnalyticsSection({ sessions, userId }: { sessions: any[]; userId?: stri
         setFeedbackList([]);
       } finally {
         setLoadingFeedback(false);
+      }
+    })();
+    // Fetch all sessions for university average comparison
+    (async () => {
+      try {
+        const snap = await getDocs(collection(db, collections.SESSIONS));
+        setAllSessionsForAvg(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch {
+        setAllSessionsForAvg([]);
       }
     })();
   }, [userId]);
@@ -772,6 +782,34 @@ function AnalyticsSection({ sessions, userId }: { sessions: any[]; userId?: stri
   const totalSessions = mySessions.length;
   const avgRate = courseStats.length > 0 ? Math.round(courseStats.reduce((s, c) => s + c.rate, 0) / courseStats.length) : 0;
 
+  // Effectiveness metrics
+  const avgFeedbackScore = useMemo(() => {
+    if (feedbackList.length === 0) return 0;
+    return Math.round((feedbackList.reduce((s, f) => s + (f.rating || 0), 0) / feedbackList.length) * 10) / 10;
+  }, [feedbackList]);
+
+  const universityAvgRate = useMemo(() => {
+    if (allSessionsForAvg.length === 0) return 0;
+    let totalRate = 0;
+    let count = 0;
+    for (const s of allSessionsForAvg) {
+      const enrolled = s.enrolledCount || 0;
+      if (enrolled === 0) continue;
+      const attended = s.attendanceCount || 0;
+      totalRate += Math.min(100, Math.round((attended / enrolled) * 100));
+      count++;
+    }
+    return count > 0 ? Math.round(totalRate / count) : 0;
+  }, [allSessionsForAvg]);
+
+  const effectivenessScore = useMemo(() => {
+    if (totalSessions === 0) return 0;
+    const attendanceComponent = avgRate * 0.6;
+    const feedbackComponent = (avgFeedbackScore / 5) * 100 * 0.3;
+    const consistencyComponent = courseStats.length > 0 ? Math.min(100, courseStats.length * 20) * 0.1 : 0;
+    return Math.round(attendanceComponent + feedbackComponent + consistencyComponent);
+  }, [avgRate, avgFeedbackScore, courseStats, totalSessions]);
+
   const getRateColor = (rate: number) => {
     if (rate >= 75) return 'var(--success)';
     if (rate >= 50) return 'var(--warning)';
@@ -813,6 +851,35 @@ function AnalyticsSection({ sessions, userId }: { sessions: any[]; userId?: stri
         </div>
       </div>
 
+      {/* Effectiveness Metrics */}
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div style={{ padding: '16px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Your Avg Feedback</p>
+          <div className="flex items-center justify-center gap-1 mt-2">
+            <Star className="w-5 h-5" style={{ fill: 'var(--gold-primary)', color: 'var(--gold-primary)' }} />
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: '24px', color: 'var(--gold-primary)', fontWeight: 500 }}>{avgFeedbackScore > 0 ? avgFeedbackScore : '—'}</p>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-tertiary)' }}>/5</span>
+          </div>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '4px' }}>{feedbackList.length} reviews</p>
+        </div>
+        <div style={{ padding: '16px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>vs University Avg</p>
+          <p className="mt-2" style={{ fontFamily: 'var(--font-mono)', fontSize: '24px', fontWeight: 500, color: avgRate >= universityAvgRate ? 'var(--success)' : 'var(--warning)' }}>
+            {avgRate >= universityAvgRate ? '+' : ''}{avgRate - universityAvgRate}%
+          </p>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+            Uni avg: {universityAvgRate}%
+          </p>
+        </div>
+        <div style={{ padding: '16px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Effectiveness Score</p>
+          <p className="mt-2" style={{ fontFamily: 'var(--font-mono)', fontSize: '24px', fontWeight: 500, color: effectivenessScore >= 75 ? 'var(--success)' : effectivenessScore >= 50 ? 'var(--warning)' : 'var(--danger)' }}>
+            {effectivenessScore}
+          </p>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '4px' }}>of 100</p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Course bar chart */}
         <div>
@@ -828,7 +895,7 @@ function AnalyticsSection({ sessions, userId }: { sessions: any[]; userId?: stri
                 <Tooltip contentStyle={chartTooltipStyle} formatter={(value: number, _n: string, props: any) => [`${value}% (${props.payload.present}/${props.payload.total})`, 'Rate']} />
                 <Bar dataKey="rate" radius={[0, 4, 4, 0]}>
                   {courseStats.map((entry, i) => (
-                    <rect key={i} fill={entry.rate >= 75 ? 'var(--success)' : entry.rate >= 50 ? 'var(--warning)' : 'var(--danger)'} />
+                    <Cell key={i} fill={entry.rate >= 75 ? 'var(--success)' : entry.rate >= 50 ? 'var(--warning)' : 'var(--danger)'} />
                   ))}
                 </Bar>
               </BarChart>

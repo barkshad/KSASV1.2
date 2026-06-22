@@ -11,7 +11,7 @@
  */
 
 import { db, doc, getDoc, setDoc, collection, query, where, getDocs } from './firebase';
-import { collections } from './db';
+import { collections } from './collections';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 export interface CheckInSecurityContext {
