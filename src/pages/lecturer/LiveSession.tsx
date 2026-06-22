@@ -46,6 +46,44 @@ export default function LiveSession() {
   const qrIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // ── Anti-screenshot: intercept keyboard shortcuts ──────────────────────────
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Block: Ctrl+Shift+S (Firefox screenshot), Ctrl+P (print), F12 (devtools)
+      const blocked =
+        (e.ctrlKey && e.shiftKey && (e.key === 'S' || e.key === 's')) ||
+        (e.ctrlKey && (e.key === 'p' || e.key === 'P')) ||
+        e.key === 'F12';
+
+      // Block: Cmd+Shift+4/5 on Mac
+      const macBlocked =
+        e.metaKey && e.shiftKey && (e.key === '4' || e.key === '5' || e.key === '6');
+
+      if (blocked || macBlocked) {
+        e.preventDefault();
+        e.stopPropagation();
+        toast.error('Screenshots are not allowed during live sessions.', { duration: 3000 });
+        return false;
+      }
+    };
+
+    // Block right-click on QR panel
+    const contextHandler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-qr-panel]')) {
+        e.preventDefault();
+        return false;
+      }
+    };
+
+    document.addEventListener('keydown', handler, true);
+    document.addEventListener('contextmenu', contextHandler, true);
+    return () => {
+      document.removeEventListener('keydown', handler, true);
+      document.removeEventListener('contextmenu', contextHandler, true);
+    };
+  }, []);
+
   // ── Online / offline detection ─────────────────────────────────────────────
   useEffect(() => {
     const on = () => setOnline(true);
@@ -395,7 +433,17 @@ export default function LiveSession() {
 
         {/* ── Right: QR code panel ───────────────────────────────────────────── */}
         <div className="lg:col-span-5">
-          <div className="bg-primary rounded-3xl p-6 shadow-xl sticky top-20">
+          <div
+            data-qr-panel
+            className="bg-primary rounded-3xl p-6 shadow-xl sticky top-20"
+            style={{
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              WebkitUserDrag: 'none',
+              MozUserSelect: 'none',
+              msUserSelect: 'none',
+            }}
+          >
 
             {/* Header */}
             <div className="flex items-center justify-between mb-5">
@@ -424,7 +472,44 @@ export default function LiveSession() {
             </div>
 
             {/* QR code */}
-            <div className={`bg-white rounded-2xl p-4 flex items-center justify-center aspect-square transition-opacity duration-200 ${!isOpen ? 'opacity-20 pointer-events-none' : qrFlash ? 'opacity-60' : 'opacity-100'}`}>
+            <div
+              className={`bg-white rounded-2xl p-4 flex items-center justify-center aspect-square transition-opacity duration-200 relative overflow-hidden ${!isOpen ? 'opacity-20 pointer-events-none' : qrFlash ? 'opacity-60' : 'opacity-100'}`}
+              style={{
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+                WebkitUserDrag: 'none',
+              }}
+            >
+              {/* Watermark overlay */}
+              {isOpen && totpToken && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    pointerEvents: 'none',
+                    zIndex: 10,
+                  }}
+                >
+                  <div
+                    style={{
+                      transform: 'rotate(-30deg)',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      color: 'rgba(123,26,43,0.08)',
+                      letterSpacing: '0.05em',
+                      whiteSpace: 'nowrap',
+                      fontFamily: 'var(--font-mono)',
+                      userSelect: 'none',
+                    }}
+                  >
+                    KSAS · {sessionData.courseCode} · {new Date().toLocaleDateString()} · SESSION
+                  </div>
+                </div>
+              )}
+
               {totpToken && isOpen ? (
                 <QRCodeSVG
                   key={qrKey}
@@ -432,6 +517,7 @@ export default function LiveSession() {
                   size={256}
                   className="w-full h-full"
                   includeMargin={false}
+                  style={{ userSelect: 'none', WebkitUserDrag: 'none' }}
                 />
               ) : (
                 <div className="flex flex-col items-center gap-3 text-on-surface-variant">

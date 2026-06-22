@@ -11,6 +11,7 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
+  ShieldAlert,
 } from 'lucide-react';
 
 const ROLES = [
@@ -285,6 +286,21 @@ export default function RoleSelection() {
             <div>
               <strong style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#7B1A2B', marginBottom: '2px' }}>Institutional Analytics</strong>
               <span style={{ fontSize: '12px', fontWeight: 300, color: '#6B4A50', lineHeight: 1.5 }}>Full visibility into attendance trends across every course.</span>
+            </div>
+          </div>
+
+          {/* Anti-Fraud Shield */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            <div style={{ width: '28px', height: '28px', minWidth: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '2px' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7B1A2B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L4 6v6c0 5.5 3.5 10.7 8 12 4.5-1.3 8-6.5 8-12V6L12 2z"/>
+                <path d="M9 12l2 2 4-4"/>
+                <circle cx="12" cy="12" r="10" strokeDasharray="4 2"/>
+              </svg>
+            </div>
+            <div>
+              <strong style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#7B1A2B', marginBottom: '2px' }}>Anti-Fraud Shield</strong>
+              <span style={{ fontSize: '12px', fontWeight: 300, color: '#6B4A50', lineHeight: 1.5 }}>Device binding, GPS & one-time QR tokens block proxy attendance.</span>
             </div>
           </div>
         </div>
@@ -695,6 +711,29 @@ export default function RoleSelection() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* Security warning banner */}
+        <div style={{
+          maxWidth: '440px',
+          marginTop: '32px',
+          padding: '14px 18px',
+          background: '#FEF4F5',
+          border: '1px solid #E8A8B2',
+          borderRadius: '12px',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '10px',
+        }}>
+          <ShieldAlert className="w-5 h-5 shrink-0" style={{ color: '#7B1A2B', marginTop: '1px' }} />
+          <div>
+            <p style={{ fontSize: '12px', fontWeight: 600, color: '#7B1A2B', margin: '0 0 2px' }}>
+              Anti-Fraud Protection Active
+            </p>
+            <p style={{ fontSize: '11px', fontWeight: 300, color: '#6B4A50', margin: 0, lineHeight: 1.5 }}>
+              This system uses device fingerprinting, GPS proximity checks, one-time QR tokens, and IP validation to prevent proxy attendance. All check-in attempts are logged with device metadata and violations are reported to administration.
+            </p>
+          </div>
         </div>
       </div>
 
