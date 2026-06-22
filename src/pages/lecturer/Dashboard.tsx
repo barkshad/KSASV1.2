@@ -20,7 +20,7 @@ export default function LecturerDashboard() {
   const { data: allSessions, loading: loadingSessions } = useFirestoreRealtimeCollection(collections.SESSIONS);
 
   const activeSession = useMemo(() => {
-    return allSessions.find(s => s.lecturerId === user?.uid && s.status === 'open');
+    return (allSessions || []).find(s => s.lecturerId === user?.uid && s.status === 'open');
   }, [allSessions, user]);
 
   const [starting, setStarting] = useState(false);
@@ -141,6 +141,66 @@ export default function LecturerDashboard() {
     exportSessionCSV(endResult.session, endResult.attendance);
   };
 
+  const [weeklyTrendData, setWeeklyTrendData] = useState<{ day: string; pct: number }[]>([]);
+  const [weeklyTrendLoading, setWeeklyTrendLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user?.uid) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const lecturerSessions = (allSessions || []).filter(s => s.lecturerId === user?.uid);
+        const dayCount: Record<string, { present: number; enrolled: number }> = {};
+        dayNames.forEach(d => { dayCount[d] = { present: 0, enrolled: 0 }; });
+
+        for (const s of lecturerSessions) {
+          if (!s.date) continue;
+          const d = new Date(s.date);
+          if (isNaN(d.getTime())) continue;
+          const day = dayNames[d.getDay()];
+          const enrolled = s.enrolledCount || 0;
+          dayCount[day].enrolled += enrolled;
+
+          if (s.attendanceCount != null && s.attendanceCount > 0) {
+            dayCount[day].present += s.attendanceCount;
+          } else if (enrolled > 0 && s.status === 'open') {
+            try {
+              const attSnap = await getDocs(collection(db, `${collections.SESSIONS}/${s.id}/attendance`));
+              dayCount[day].present += attSnap.size;
+            } catch { /* skip */ }
+          }
+        }
+
+        if (cancelled) return;
+
+        const trend = dayNames.filter(d => d !== 'Sun' && d !== 'Sat').map(day => {
+          const { present, enrolled } = dayCount[day];
+          return { day, pct: enrolled > 0 ? Math.round((present / enrolled) * 100) : 0 };
+        });
+        setWeeklyTrendData(trend);
+      } catch {
+        if (!cancelled) {
+          const fallback = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map(day => ({ day, pct: 0 }));
+          setWeeklyTrendData(fallback);
+        }
+      } finally {
+        if (!cancelled) setWeeklyTrendLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [allSessions, user]);
+
+  const weeklyTrend = weeklyTrendData;
+
+  const weeklyAvg = useMemo(() => {
+    const vals = weeklyTrend.filter(d => d.pct > 0);
+    if (vals.length === 0) return 0;
+    return Math.round(vals.reduce((s, d) => s + d.pct, 0) / vals.length);
+  }, [weeklyTrend]);
+
   if (loadingSessions) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -151,30 +211,6 @@ export default function LecturerDashboard() {
 
   const enrolledCount = activeSession?.enrolledCount || 0;
   const attendancePct = enrolledCount > 0 ? Math.min(100, Math.round((attendanceCount / enrolledCount) * 100)) : 0;
-
-  const weeklyTrend = useMemo(() => {
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const lecturerSessions = allSessions.filter(s => s.lecturerId === user?.uid);
-    const dayCount: Record<string, { present: number; total: number }> = {};
-    dayNames.forEach(d => { dayCount[d] = { present: 0, total: 0 }; });
-
-    lecturerSessions.forEach(s => {
-      if (!s.date) return;
-      const day = dayNames[new Date(s.date).getDay()];
-      if (day) dayCount[day].total++;
-    });
-
-    return dayNames.filter(d => d !== 'Sun' && d !== 'Sat').map(day => {
-      const { present, total } = dayCount[day];
-      return { day, pct: total > 0 ? Math.round((present / total) * 100) : 0 };
-    });
-  }, [allSessions, user]);
-
-  const weeklyAvg = useMemo(() => {
-    const vals = weeklyTrend.filter(d => d.pct > 0);
-    if (vals.length === 0) return 0;
-    return Math.round(vals.reduce((s, d) => s + d.pct, 0) / vals.length);
-  }, [weeklyTrend]);
 
   return (
     <div className="animate-page-in" style={{ maxWidth: '1280px', margin: '0 auto', padding: '32px 48px' }}>
@@ -742,7 +778,7 @@ function AnalyticsSection({ sessions, userId }: { sessions: any[]; userId?: stri
       }
     })();
   }, [userId]);
-  const mySessions = useMemo(() => sessions.filter(s => s.lecturerId === userId), [sessions, userId]);
+  const mySessions = useMemo(() => (sessions || []).filter(s => s.lecturerId === userId), [sessions, userId]);
 
   const courseStats = useMemo(() => {
     const map = new Map<string, { total: number; present: number; name: string }>();

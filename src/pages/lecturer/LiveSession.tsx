@@ -22,40 +22,34 @@ import { collections, archiveSession, closeSession } from '../../lib/db';
 import { getCurrentTOTP } from '../../lib/totp';
 import { buildAttendanceCsv, downloadCsv, formatTimeIn, AttendanceCsvRow } from '../../lib/csvExport';
 
-const QR_DISPLAY_INTERVAL_MS = 5_000; // QR UI refreshes every 5 seconds
-const TOTP_PERIOD_S = 5;              // TOTP token period (must match totp.ts)
+const QR_DISPLAY_INTERVAL_MS = 5_000;
+const TOTP_PERIOD_S = 5;
 
 export default function LiveSession() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const sessionId = searchParams.get('sessionId');
 
-  // Session & attendance state
   const [sessionData, setSessionData] = useState<any>(null);
   const [attendance, setAttendance] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [ending, setEnding] = useState(false);
   const [online, setOnline] = useState(navigator.onLine);
 
-  // QR / TOTP state
   const [totpToken, setTotpToken] = useState('');
-  const [countdown, setCountdown] = useState(5);       // 5→0 display countdown
-  const [qrKey, setQrKey] = useState(0);               // forces QR re-mount on refresh
-  const [qrFlash, setQrFlash] = useState(false);       // brief flash on refresh
+  const [countdown, setCountdown] = useState(5);
+  const [qrKey, setQrKey] = useState(0);
+  const [qrFlash, setQrFlash] = useState(false);
 
   const qrIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // ── Anti-screenshot: intercept keyboard shortcuts ──────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // Block: Ctrl+Shift+S (Firefox screenshot), Ctrl+P (print), F12 (devtools)
       const blocked =
         (e.ctrlKey && e.shiftKey && (e.key === 'S' || e.key === 's')) ||
         (e.ctrlKey && (e.key === 'p' || e.key === 'P')) ||
         e.key === 'F12';
-
-      // Block: Cmd+Shift+4/5 on Mac
       const macBlocked =
         e.metaKey && e.shiftKey && (e.key === '4' || e.key === '5' || e.key === '6');
 
@@ -67,7 +61,6 @@ export default function LiveSession() {
       }
     };
 
-    // Block right-click on QR panel
     const contextHandler = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (target.closest('[data-qr-panel]')) {
@@ -84,7 +77,6 @@ export default function LiveSession() {
     };
   }, []);
 
-  // ── Online / offline detection ─────────────────────────────────────────────
   useEffect(() => {
     const on = () => setOnline(true);
     const off = () => setOnline(false);
@@ -93,7 +85,6 @@ export default function LiveSession() {
     return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
   }, []);
 
-  // ── Firestore listeners ────────────────────────────────────────────────────
   useEffect(() => {
     if (!sessionId) { setLoading(false); return; }
     setLoading(true);
@@ -119,7 +110,6 @@ export default function LiveSession() {
     return () => { unsubSession(); unsubAtt(); };
   }, [sessionId]);
 
-  // ── QR refresh loop ────────────────────────────────────────────────────────
   const refreshQR = useCallback(() => {
     if (!sessionData?.totpSecret) return;
     const token = getCurrentTOTP(sessionData.totpSecret);
@@ -133,13 +123,8 @@ export default function LiveSession() {
   useEffect(() => {
     if (!sessionData?.totpSecret || sessionData?.status !== 'open') return;
 
-    // Initial token
     refreshQR();
-
-    // Refresh every 5 seconds
     qrIntervalRef.current = setInterval(refreshQR, QR_DISPLAY_INTERVAL_MS);
-
-    // Countdown tick every second
     countdownIntervalRef.current = setInterval(() => {
       setCountdown((c) => (c <= 1 ? 5 : c - 1));
     }, 1_000);
@@ -150,7 +135,6 @@ export default function LiveSession() {
     };
   }, [sessionData?.totpSecret, sessionData?.status, refreshQR]);
 
-  // ── End session ────────────────────────────────────────────────────────────
   const handleEndSession = async () => {
     if (!sessionId || ending) return;
     if (!confirm('End this session? Attendance data will be archived.')) return;
@@ -166,14 +150,12 @@ export default function LiveSession() {
     }
   };
 
-  // ── Reopen closed session ──────────────────────────────────────────────────
   const handleReopenSession = async () => {
     if (!sessionId) return;
     if (!confirm('Reopen this session to accept more check-ins?')) return;
     await updateDoc(doc(db, collections.SESSIONS, sessionId), { status: 'open' });
   };
 
-  // ── CSV export ─────────────────────────────────────────────────────────────
   const handleExportCsv = () => {
     if (!sessionData) return;
     if (attendance.length === 0) {
@@ -202,24 +184,25 @@ export default function LiveSession() {
     downloadCsv(`attendance_${safeCourse}_${sessionData.date || 'export'}.csv`, csv);
   };
 
-  // ── Render guards ──────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--kabu-maroon)' }} />
       </div>
     );
   }
 
   if (!sessionData) {
     return (
-      <div className="max-w-xl mx-auto p-8 text-center">
-        <AlertCircle className="w-10 h-10 mx-auto text-error mb-3" />
-        <h2 className="font-bold text-xl text-on-surface mb-2">Session not found</h2>
-        <p className="text-on-surface-variant text-sm mb-6">
+      <div style={{ maxWidth: '500px', margin: '0 auto', padding: '32px', textAlign: 'center' }}>
+        <AlertCircle className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--danger)' }} />
+        <h2 style={{ fontFamily: 'var(--font-editorial)', fontSize: '22px', color: 'var(--text-primary)', marginBottom: '8px' }}>
+          Session not found
+        </h2>
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
           This session may have ended or the link is invalid.
         </p>
-        <button onClick={() => navigate('/lecturer')} className="bg-primary text-on-primary px-6 py-3 rounded-xl font-bold">
+        <button onClick={() => navigate('/lecturer')} className="btn-primary" style={{ padding: '10px 24px' }}>
           Back to Dashboard
         </button>
       </div>
@@ -233,80 +216,74 @@ export default function LiveSession() {
   const lateCount = attendance.filter((a: any) => a.status === 'late').length;
   const attendancePct = totalEnrolled > 0 ? Math.min(100, Math.round((totalPresent / totalEnrolled) * 100)) : 0;
 
-  // Countdown colour: green → yellow → red
-  const countdownColor =
-    countdown > 3 ? 'text-success' : countdown > 1 ? 'text-secondary' : 'text-error';
+  const countdownColor = countdown > 3 ? 'var(--success)' : countdown > 1 ? 'var(--warning)' : 'var(--danger)';
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 animate-in fade-in duration-400">
+    <div className="animate-page-in" style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 32px' }}>
 
-      {/* ── Session header ──────────────────────────────────────────────────── */}
-      <div className="bg-surface-container-lowest rounded-2xl p-5 mb-6 shadow-sm border border-outline-variant/20">
+      {/* Session header */}
+      <div
+        style={{
+          padding: '20px',
+          background: 'var(--bg-surface)',
+          borderRadius: 'var(--radius-lg)',
+          border: '0.5px solid var(--bg-border)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 0 0 0.5px var(--bg-border)',
+          marginBottom: '24px',
+        }}
+      >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div className={`w-2.5 h-2.5 rounded-full ${isOpen ? 'bg-success animate-pulse' : 'bg-outline'}`} />
-              <span className={`text-xs font-bold uppercase tracking-wider ${isOpen ? 'text-success' : 'text-on-surface-variant'}`}>
+              <span
+                className="flex h-3 w-3 relative"
+                style={{ width: '10px', height: '10px', borderRadius: '9999px', background: isOpen ? 'var(--success)' : 'var(--text-tertiary)' }}
+              >
+                {isOpen && (
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ background: 'var(--success)' }}></span>
+                )}
+              </span>
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: isOpen ? 'var(--success)' : 'var(--text-tertiary)' }}>
                 {isOpen ? 'Session Live' : 'Session Closed'}
               </span>
-              <span className="mx-2 text-outline-variant">·</span>
+              <span style={{ color: 'var(--text-tertiary)', margin: '0 6px' }}>·</span>
               {online ? (
-                <span className="flex items-center gap-1 text-xs text-success">
+                <span className="flex items-center gap-1" style={{ fontSize: '12px', color: 'var(--success)' }}>
                   <Wifi className="w-3 h-3" /> Connected
                 </span>
               ) : (
-                <span className="flex items-center gap-1 text-xs text-error">
+                <span className="flex items-center gap-1" style={{ fontSize: '12px', color: 'var(--danger)' }}>
                   <WifiOff className="w-3 h-3" /> Offline
                 </span>
               )}
             </div>
-            <h2 className="font-bold text-xl text-primary">{sessionData.courseName}</h2>
-            <p className="text-sm text-on-surface-variant mt-0.5">
-              {sessionData.courseCode} &nbsp;·&nbsp; Room {sessionData.room} &nbsp;·&nbsp;
-              {sessionData.startTime}–{sessionData.endTime}
+            <h2 style={{ fontFamily: 'var(--font-editorial)', fontSize: '22px', color: 'var(--text-primary)' }}>
+              {sessionData.courseName}
+            </h2>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+              {sessionData.courseCode} · Room {sessionData.room} · {sessionData.startTime}–{sessionData.endTime}
             </p>
             {sessionData.topicOfDay && (
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: 'var(--kabu-maroon-tint)',
-                  border: '1px solid var(--bg-border)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '4px 10px',
-                  fontFamily: 'Outfit, sans-serif',
-                  fontSize: '12px',
-                  fontWeight: 400,
-                  color: 'var(--kabu-maroon)',
-                  marginTop: '8px',
-                  maxWidth: '420px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'var(--kabu-maroon-tint)', border: '1px solid var(--bg-border)', borderRadius: 'var(--radius-sm)', padding: '4px 10px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 400, color: 'var(--kabu-maroon)', marginTop: '8px', maxWidth: '420px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 <Bookmark className="w-4 h-4 shrink-0" style={{ color: 'var(--kabu-maroon)' }} />
                 <span>{sessionData.topicOfDay.length > 60 ? sessionData.topicOfDay.slice(0, 60) + '…' : sessionData.topicOfDay}</span>
               </div>
             )}
-
-            {/* Security status badges */}
             {(sessionData.requireGps || sessionData.requireIpRange || sessionData.allowedRadiusMeters) && (
               <div className="flex flex-wrap gap-1.5 mt-2">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-success-container/20 text-success border border-success/30">
+                <span className="badge badge-success" style={{ fontSize: '10px', padding: '2px 8px' }}>
                   <Smartphone className="w-3 h-3" /> Device Bound
                 </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-success-container/20 text-success border border-success/30">
+                <span className="badge badge-success" style={{ fontSize: '10px', padding: '2px 8px' }}>
                   <Shield className="w-3 h-3" /> Token Anti-Replay
                 </span>
                 {sessionData.requireGps && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary-container/30 text-primary border border-primary/30">
+                  <span className="badge badge-info" style={{ fontSize: '10px', padding: '2px 8px' }}>
                     <MapPin className="w-3 h-3" /> GPS {sessionData.allowedRadiusMeters || 500}m
                   </span>
                 )}
                 {sessionData.requireIpRange && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary-container/30 text-primary border border-primary/30">
+                  <span className="badge badge-info" style={{ fontSize: '10px', padding: '2px 8px' }}>
                     <Globe className="w-3 h-3" /> IP Range
                   </span>
                 )}
@@ -315,24 +292,19 @@ export default function LiveSession() {
           </div>
 
           <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={handleExportCsv}
-              className="flex items-center gap-2 px-4 py-2.5 bg-surface-container border border-outline-variant rounded-xl text-sm font-bold text-on-surface hover:bg-surface-variant transition-colors"
-            >
+            <button onClick={handleExportCsv} className="btn-ghost" style={{ fontSize: '13px', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Download className="w-4 h-4" /> Export CSV
             </button>
             {!isOpen && (
-              <button
-                onClick={handleReopenSession}
-                className="flex items-center gap-2 px-4 py-2.5 bg-surface-container border border-outline-variant rounded-xl text-sm font-bold text-on-surface hover:bg-surface-variant transition-colors"
-              >
+              <button onClick={handleReopenSession} className="btn-ghost" style={{ fontSize: '13px', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <RotateCcw className="w-4 h-4" /> Reopen
               </button>
             )}
             <button
               onClick={handleEndSession}
               disabled={!isOpen || ending}
-              className="flex items-center gap-2 px-5 py-2.5 bg-error text-on-error rounded-xl font-bold text-sm hover:bg-error/90 transition-colors disabled:opacity-50"
+              className="btn-danger"
+              style={{ fontSize: '13px', padding: '8px 20px', display: 'flex', alignItems: 'center', gap: '6px', opacity: (!isOpen || ending) ? 0.5 : 1 }}
             >
               {ending && <Loader2 className="w-4 h-4 animate-spin" />}
               {ending ? 'Ending…' : 'End Session'}
@@ -343,82 +315,97 @@ export default function LiveSession() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-        {/* ── Left: Stats + attendance feed ─────────────────────────────────── */}
-        <div className="lg:col-span-7 space-y-5">
-
-          {/* Stat cards */}
+        {/* Left: Stats + attendance feed */}
+        <div className="lg:col-span-7 space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
-              { label: 'Present', value: totalPresent, color: 'border-success', textColor: 'text-success' },
-              { label: 'Absent', value: Math.max(0, totalEnrolled - totalPresent), color: 'border-error', textColor: 'text-error' },
-              { label: 'Late', value: lateCount, color: 'border-secondary-fixed-dim', textColor: 'text-secondary' },
-              { label: 'Enrolled', value: totalEnrolled, color: 'border-primary-container', textColor: 'text-primary' },
+              { label: 'Present', value: totalPresent, bg: 'var(--success-bg)', color: 'var(--success)' },
+              { label: 'Absent', value: Math.max(0, totalEnrolled - totalPresent), bg: 'var(--danger-bg)', color: 'var(--danger)' },
+              { label: 'Late', value: lateCount, bg: 'var(--warning-bg)', color: 'var(--warning)' },
+              { label: 'Enrolled', value: totalEnrolled, bg: 'var(--bg-elevated)', color: 'var(--text-primary)' },
             ].map((s) => (
-              <div key={s.label} className={`bg-surface-container-lowest p-4 rounded-xl shadow-sm border-l-4 ${s.color}`}>
-                <p className="text-xs text-on-surface-variant mb-1">{s.label}</p>
-                <p className={`text-2xl font-bold ${s.textColor}`}>{s.value}</p>
+              <div key={s.label} style={{ padding: '16px', background: s.bg, borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: '4px' }}>{s.label}</p>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '24px', fontWeight: 500, color: s.color }}>{s.value}</p>
               </div>
             ))}
           </div>
 
-          {/* Progress bar */}
-          <div className="bg-surface-container-lowest rounded-xl p-4 border border-outline-variant/20 shadow-sm">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="font-semibold text-on-surface">Check-in progress</span>
-              <span className="text-on-surface-variant">{totalPresent}/{totalEnrolled} ({attendancePct}%)</span>
+          <div style={{ padding: '16px', background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)', border: '0.5px solid var(--bg-border)' }}>
+            <div className="flex justify-between" style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+              <span>Check-in progress</span>
+              <span>{totalPresent}/{totalEnrolled} ({attendancePct}%)</span>
             </div>
-            <div className="w-full bg-surface-container-high rounded-full h-3 overflow-hidden">
-              <div
-                className="bg-success h-full rounded-full transition-all duration-700"
-                style={{ width: `${attendancePct}%` }}
-              />
+            <div style={{ width: '100%', background: 'var(--bg-elevated)', borderRadius: '9999px', height: '10px', overflow: 'hidden' }}>
+              <div style={{ width: `${attendancePct}%`, height: '100%', background: attendancePct >= 75 ? 'var(--success)' : attendancePct >= 50 ? 'var(--warning)' : 'var(--danger)', borderRadius: '9999px', transition: 'width 700ms ease' }} />
             </div>
           </div>
 
-          {/* Attendance feed */}
-          <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-sm overflow-hidden">
-            <div className="px-5 py-3.5 border-b border-outline-variant/20 bg-surface-container-low flex items-center justify-between">
-              <h3 className="font-bold text-primary flex items-center gap-2 text-sm">
+          <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)', border: '0.5px solid var(--bg-border)', overflow: 'hidden' }}>
+            <div style={{ padding: '12px 20px', borderBottom: '0.5px solid var(--bg-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h3 style={{ fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Users className="w-4 h-4" /> Check-ins ({totalPresent})
               </h3>
               {isOpen && totalPresent === 0 && (
-                <span className="text-xs text-on-surface-variant flex items-center gap-1">
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <Clock className="w-3.5 h-3.5" /> Waiting for students…
                 </span>
               )}
             </div>
 
-            <div className="divide-y divide-outline-variant/15 max-h-[420px] overflow-y-auto">
+            <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
               {attendance.length === 0 ? (
-                <div className="py-10 text-center text-on-surface-variant">
-                  <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">No check-ins yet.</p>
-                  <p className="text-xs mt-1 opacity-70">Students scan the QR code to register.</p>
+                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+                  <AlertCircle className="w-8 h-8 mx-auto mb-2" style={{ opacity: 0.3 }} />
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px' }}>No check-ins yet.</p>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', marginTop: '4px', opacity: 0.7 }}>Students scan the QR code to register.</p>
                 </div>
               ) : (
                 attendance.map((att: any) => (
                   <div
                     key={att.id}
-                    className="flex items-center justify-between px-5 py-3 hover:bg-surface-container/60 transition-colors animate-in slide-in-from-left-3 fade-in duration-300"
+                    className="flex items-center justify-between"
+                    style={{ padding: '10px 20px', borderBottom: '0.5px solid var(--bg-border)', transition: 'background 150ms' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-elevated)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-primary text-on-primary font-bold text-xs flex items-center justify-center shrink-0">
+                      <div
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '9999px',
+                          background: 'var(--kabu-maroon)',
+                          color: 'var(--text-inverse)',
+                          fontWeight: 700,
+                          fontSize: '13px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
                         {att.studentName?.charAt(0)?.toUpperCase() || '?'}
                       </div>
                       <div>
-                        <p className="font-semibold text-sm text-on-surface">{att.studentName}</p>
-                        <p className="text-xs text-on-surface-variant">{att.studentId}</p>
+                        <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>{att.studentName}</p>
+                        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-tertiary)' }}>{att.studentId}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full capitalize ${
-                        att.status === 'late'
-                          ? 'bg-secondary-container/30 text-on-secondary-container'
-                          : 'bg-success-container/20 text-on-success-container'
-                      }`}>
+                    <div className="flex items-center gap-2" style={{ flexShrink: 0 }}>
+                      <span
+                        className="badge"
+                        style={{
+                          background: att.status === 'late' ? 'var(--warning-bg)' : 'var(--success-bg)',
+                          color: att.status === 'late' ? 'var(--warning)' : 'var(--success)',
+                          border: `0.5px solid ${att.status === 'late' ? 'var(--warning)' : 'var(--success)'}`,
+                          fontSize: '10px',
+                          textTransform: 'capitalize',
+                        }}
+                      >
                         {att.status || 'present'}
                       </span>
-                      <span className="text-xs text-on-surface-variant">
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-tertiary)' }}>
                         {att.timestamp?.toDate
                           ? att.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                           : '—'}
@@ -431,78 +418,62 @@ export default function LiveSession() {
           </div>
         </div>
 
-        {/* ── Right: QR code panel ───────────────────────────────────────────── */}
+        {/* Right: QR code panel */}
         <div className="lg:col-span-5">
           <div
             data-qr-panel
-            className="bg-primary rounded-3xl p-6 shadow-xl sticky top-20"
             style={{
+              background: 'var(--kabu-maroon)',
+              borderRadius: 'var(--radius-xl)',
+              padding: '24px',
+              boxShadow: '0 0 24px rgba(139,21,56,0.2), 0 1px 3px rgba(0,0,0,0.3)',
+              position: 'sticky',
+              top: '80px',
               userSelect: 'none',
               WebkitUserSelect: 'none',
-              MozUserSelect: 'none',
-              msUserSelect: 'none',
             } as React.CSSProperties}
           >
-
-            {/* Header */}
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h3 className="font-bold text-on-primary text-lg">Attendance QR</h3>
-                <p className="text-on-primary/60 text-xs mt-0.5">Token refreshes every 5 seconds</p>
+                <h3 style={{ fontFamily: 'var(--font-editorial)', fontSize: '20px', color: 'var(--text-inverse)', fontWeight: 400 }}>Attendance QR</h3>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>Token refreshes every 5 seconds</p>
               </div>
-
-              {/* Countdown ring */}
-              <div className="relative w-14 h-14 flex items-center justify-center">
-                <svg className="w-14 h-14 -rotate-90 absolute" viewBox="0 0 56 56">
-                  <circle cx="28" cy="28" r="24" fill="none" stroke="currentColor" strokeWidth="3" className="text-on-primary/20" />
+              <div className="relative" style={{ width: '56px', height: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg style={{ width: '56px', height: '56px', transform: 'rotate(-90deg)', position: 'absolute' }} viewBox="0 0 56 56">
+                  <circle cx="28" cy="28" r="24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="3" />
                   <circle
                     cx="28" cy="28" r="24"
-                    fill="none" stroke="currentColor" strokeWidth="3"
+                    fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="3"
                     strokeDasharray={`${2 * Math.PI * 24}`}
                     strokeDashoffset={`${2 * Math.PI * 24 * (1 - countdown / 5)}`}
                     strokeLinecap="round"
-                    className="text-on-primary transition-all duration-1000"
+                    style={{ transition: 'stroke-dashoffset 1000ms linear' }}
                   />
                 </svg>
-                <span className={`font-bold text-xl text-on-primary z-10 ${countdown <= 1 ? 'animate-pulse' : ''}`}>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '18px', fontWeight: 700, color: 'white', zIndex: 10, animation: countdown <= 1 ? 'pulse 1s infinite' : undefined }}>
                   {countdown}
                 </span>
               </div>
             </div>
 
-            {/* QR code */}
             <div
-              className={`bg-white rounded-2xl p-4 flex items-center justify-center aspect-square transition-opacity duration-200 relative overflow-hidden ${!isOpen ? 'opacity-20 pointer-events-none' : qrFlash ? 'opacity-60' : 'opacity-100'}`}
               style={{
-                userSelect: 'none',
-                WebkitUserSelect: 'none',
-              } as React.CSSProperties}
+                background: 'white',
+                borderRadius: 'var(--radius-lg)',
+                padding: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                aspectRatio: '1',
+                opacity: !isOpen ? 0.2 : qrFlash ? 0.6 : 1,
+                transition: 'opacity 200ms',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
             >
-              {/* Watermark overlay */}
               {isOpen && totpToken && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    pointerEvents: 'none',
-                    zIndex: 10,
-                  }}
-                >
-                  <div
-                    style={{
-                      transform: 'rotate(-30deg)',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      color: 'rgba(123,26,43,0.08)',
-                      letterSpacing: '0.05em',
-                      whiteSpace: 'nowrap',
-                      fontFamily: 'var(--font-mono)',
-                      userSelect: 'none',
-                    }}
-                  >
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 10 }}>
+                  <div style={{ transform: 'rotate(-30deg)', fontSize: '11px', fontWeight: 700, color: 'rgba(123,26,43,0.08)', letterSpacing: '0.05em', whiteSpace: 'nowrap', fontFamily: 'var(--font-mono)', userSelect: 'none' }}>
                     KSAS · {sessionData.courseCode} · {new Date().toLocaleDateString()} · SESSION
                   </div>
                 </div>
@@ -513,49 +484,66 @@ export default function LiveSession() {
                   key={qrKey}
                   value={qrData}
                   size={256}
-                  className="w-full h-full"
+                  style={{ width: '100%', height: '100%', userSelect: 'none' } as React.CSSProperties}
                   includeMargin={false}
-                  style={{ userSelect: 'none' } as React.CSSProperties}
                 />
               ) : (
-                <div className="flex flex-col items-center gap-3 text-on-surface-variant">
+                <div className="flex flex-col items-center gap-3" style={{ color: 'var(--text-tertiary)' }}>
                   <Loader2 className="w-8 h-8 animate-spin" />
-                  <p className="text-xs">{isOpen ? 'Generating…' : 'Session closed'}</p>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px' }}>{isOpen ? 'Generating…' : 'Session closed'}</p>
                 </div>
               )}
             </div>
 
-            {/* Info row */}
-            <div className="mt-4 space-y-2.5">
-              <div className="flex items-center gap-2 text-on-primary/80 text-xs">
+            <div style={{ marginTop: '16px' }} className="space-y-2">
+              <div className="flex items-center gap-2" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>
                 <CheckCircle className="w-3.5 h-3.5 shrink-0" />
                 <span>QR updates every 5s · Token changes each refresh</span>
               </div>
-              <div className="flex items-center gap-2 text-on-primary/80 text-xs">
+              <div className="flex items-center gap-2" style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>
                 <RefreshCw className="w-3.5 h-3.5 shrink-0" />
                 <span>Students can scan within the validity window</span>
               </div>
             </div>
 
-            {/* Manual copy link */}
             {isOpen && totpToken && (
               <button
-                onClick={() => navigator.clipboard?.writeText(qrData).then(() => toast.success('QR link copied to clipboard.'))}
-                className="mt-4 w-full py-2.5 bg-on-primary/10 hover:bg-on-primary/20 text-on-primary font-bold rounded-xl text-xs transition-colors border border-on-primary/20"
+                onClick={() => {
+                  try {
+                    navigator.clipboard?.writeText(qrData).then(() => toast.success('QR link copied to clipboard.')).catch(() => toast.error('Could not copy to clipboard.'));
+                  } catch {
+                    toast.error('Could not copy to clipboard.');
+                  }
+                }}
+                style={{
+                  marginTop: '16px',
+                  width: '100%',
+                  padding: '10px',
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: 'var(--radius-lg)',
+                  color: 'white',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'background 150ms',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
               >
                 Copy QR Link for Manual Entry
               </button>
             )}
 
             {!isOpen && (
-              <div className="mt-4 p-3 bg-error/20 rounded-xl text-center">
-                <p className="text-on-primary font-bold text-sm">Session Ended</p>
-                <p className="text-on-primary/60 text-xs mt-0.5">QR code is no longer active.</p>
+              <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(231,76,60,0.2)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 600, color: 'white' }}>Session Ended</p>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginTop: '2px' }}>QR code is no longer active.</p>
               </div>
             )}
           </div>
         </div>
-
       </div>
     </div>
   );

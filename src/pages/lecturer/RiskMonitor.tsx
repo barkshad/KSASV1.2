@@ -58,7 +58,7 @@ export default function RiskMonitor() {
                 if (attended) map[sid].latePresent++;
               }
             });
-          } catch (e) {
+          } catch {
             // skip
           }
         }
@@ -103,85 +103,102 @@ export default function RiskMonitor() {
 
   const highRisk = riskStudents.filter(s => s.attendance < 50).length;
   const medRisk = riskStudents.filter(s => s.attendance >= 50 && s.attendance < 75).length;
-  const lowRisk = riskStudents.filter(s => s.attendance >= 75).length;
 
   if (loading) {
-    return <div className="flex h-screen items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--kabu-maroon)' }} />
+      </div>
+    );
   }
 
   return (
-    <div className="p-md md:p-lg max-w-7xl mx-auto w-full animate-in fade-in duration-500">
-      
+    <div className="animate-page-in" style={{ maxWidth: '1280px', margin: '0 auto', padding: '32px 48px' }}>
+
       {/* Summary Alert Widget */}
-      <div className="mb-lg relative overflow-hidden bg-error-container rounded-xl p-6 shadow-sm border border-error/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="relative z-10">
+      <div
+        style={{
+          padding: '24px',
+          background: 'var(--danger-bg)',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--danger)',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 0 0 0.5px var(--bg-border)',
+          marginBottom: '24px',
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '16px',
+        }}
+      >
+        <div>
           <div className="flex items-center gap-2 mb-1">
-            <AlertTriangle className="text-error w-6 h-6 fill-current" />
-            <h2 className="font-title-lg text-on-error-container">Action Required</h2>
+            <AlertTriangle className="w-6 h-6" style={{ color: 'var(--danger)' }} />
+            <h2 style={{ fontFamily: 'var(--font-editorial)', fontSize: '22px', color: 'var(--text-primary)' }}>Action Required</h2>
           </div>
-          <p className="font-body-md text-on-error-container/80">
-            <span className="font-bold">{riskStudents.length} Students</span> currently fall below the required attendance threshold. Their academic performance is at critical risk.
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-secondary)' }}>
+            <span style={{ fontWeight: 600 }}>{riskStudents.length} Students</span> currently fall below the required attendance threshold. Their academic performance is at critical risk.
           </p>
         </div>
-        <button className="relative z-10 px-6 py-2 bg-error text-on-error rounded-full font-label-md flex items-center gap-2 hover:bg-error/90 transition-all active:scale-95">
+        <button
+          className="btn-danger"
+          style={{ padding: '8px 24px', display: 'flex', alignItems: 'center', gap: '6px' }}
+        >
           Batch Intervene
         </button>
       </div>
 
       {/* Categorization Chips */}
-      <div className="flex flex-wrap gap-4 mb-lg">
-        <button className="px-6 py-2 rounded-full border border-error bg-error/5 text-error font-bold flex items-center gap-2">
+      <div className="flex flex-wrap gap-3 mb-6">
+        <span className="badge badge-danger" style={{ fontSize: '12px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           High Risk (&lt;50%)
-          <span className="bg-error text-on-error text-[10px] px-2 py-0.5 rounded-full">{highRisk}</span>
-        </button>
-        <button className="px-6 py-2 rounded-full border border-warning bg-warning-bg text-warning font-bold flex items-center gap-2">
+          <span style={{ background: 'var(--danger)', color: 'white', fontSize: '10px', padding: '2px 8px', borderRadius: '9999px' }}>{highRisk}</span>
+        </span>
+        <span className="badge badge-warning" style={{ fontSize: '12px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           Medium Risk (50-75%)
-          <span className="bg-warning text-[10px] px-2 py-0.5 rounded-full" style={{color: 'var(--color-text-inverse)'}}>{medRisk}</span>
-        </button>
-        <button className="px-6 py-2 rounded-full border border-success bg-success/5 text-success font-bold flex items-center gap-2">
-          Low Risk (&gt;75%)
-          <span className="bg-success text-on-success text-[10px] px-2 py-0.5 rounded-full">{lowRisk}</span>
-        </button>
+          <span style={{ background: 'var(--warning)', color: 'var(--text-inverse)', fontSize: '10px', padding: '2px 8px', borderRadius: '9999px' }}>{medRisk}</span>
+        </span>
       </div>
 
       {/* At-Risk Student List */}
-      <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 overflow-hidden">
+      <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)', border: '0.5px solid var(--bg-border)', boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 0 0 0.5px var(--bg-border)', overflow: 'hidden' }}>
         {/* Mobile card view */}
-        <div className="md:hidden divide-y divide-outline-variant/20">
+        <div className="md:hidden">
           {riskStudents.length === 0 ? (
-            <div className="px-4 py-12 text-center text-on-surface-variant">
+            <div style={{ padding: '48px 16px', textAlign: 'center', color: 'var(--text-tertiary)' }}>
               No at-risk students found. All enrolled students are above the 75% threshold.
             </div>
           ) : (
             riskStudents.map((student) => (
-              <div key={student.id} className="p-4 space-y-3">
+              <div key={student.id} style={{ padding: '16px', borderBottom: '0.5px solid var(--bg-border)' }}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-surface-variant flex items-center justify-center text-on-surface-variant font-bold">
-                    {student.name.charAt(0).toUpperCase()}
+                  <div style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-md)', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                    {(student.name || '?').charAt(0).toUpperCase()}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-title-lg text-on-surface truncate">{student.name}</p>
-                    <p className="text-xs text-outline">{student.program}</p>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontFamily: 'var(--font-editorial)', fontSize: '16px', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{student.name || 'Unknown'}</p>
+                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-tertiary)' }}>{student.program || ''}</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-on-surface-variant font-body-sm">{student.reg}</span>
-                  <div className={`flex items-center gap-1 ${student.trend < 0 ? 'text-error' : student.trend > 0 ? 'text-success' : 'text-on-surface-variant'}`}>
+                <div className="flex items-center justify-between" style={{ marginTop: '12px' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-tertiary)' }}>{student.reg}</span>
+                  <div className="flex items-center gap-1" style={{ color: student.trend < 0 ? 'var(--danger)' : student.trend > 0 ? 'var(--success)' : 'var(--text-tertiary)' }}>
                     {student.trend < 0 ? <TrendingDown className="w-4 h-4" /> : null}
-                    <span className="text-xs font-bold">{student.trend > 0 ? '+' : ''}{student.trend}%</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600 }}>{student.trend > 0 ? '+' : ''}{student.trend}%</span>
                   </div>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <div className="flex justify-between items-center">
-                    <span className={`text-xs font-bold ${student.attendance < 50 ? 'text-error' : 'text-warning'}`}>{student.attendance}%</span>
-                   </div>
-                   <div className="h-1.5 w-full bg-surface-variant rounded-full overflow-hidden">
-                     <div className={`h-full rounded-full ${student.attendance < 50 ? 'bg-error' : 'bg-warning'}`} style={{ width: `${student.attendance}%` }}></div>
-                   </div>
-                 </div>
-                 <div className="flex justify-end gap-2 pt-1">
-                   <button className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"><Eye className="w-5 h-5"/></button>
-                   <button className="p-2 text-warning hover:bg-warning-bg rounded-lg transition-colors"><Mail className="w-5 h-5"/></button>
+                <div style={{ marginTop: '8px' }}>
+                  <div className="flex justify-between items-center" style={{ marginBottom: '4px' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, color: student.attendance < 50 ? 'var(--danger)' : 'var(--warning)' }}>{student.attendance}%</span>
+                  </div>
+                  <div style={{ height: '6px', width: '100%', background: 'var(--bg-elevated)', borderRadius: '9999px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', borderRadius: '9999px', background: student.attendance < 50 ? 'var(--danger)' : 'var(--warning)', width: `${student.attendance}%` }} />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2" style={{ marginTop: '8px' }}>
+                  <button style={{ padding: '8px', color: 'var(--kabu-maroon)', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 150ms' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--kabu-maroon-tint)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}><Eye className="w-5 h-5" /></button>
+                  <button style={{ padding: '8px', color: 'var(--warning)', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 150ms' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--warning-bg)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}><Mail className="w-5 h-5" /></button>
                 </div>
               </div>
             ))
@@ -189,57 +206,62 @@ export default function RiskMonitor() {
         </div>
 
         {/* Desktop table view */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-surface-container-low border-b border-outline-variant/30">
-              <tr>
-                <th className="px-6 py-4 font-label-md text-outline">STUDENT</th>
-                <th className="px-6 py-4 font-label-md text-outline">REG NUMBER</th>
-                <th className="px-6 py-4 font-label-md text-outline">ATTENDANCE</th>
-                <th className="px-6 py-4 font-label-md text-outline">TREND</th>
-                <th className="px-6 py-4 font-label-md text-outline text-right">ACTIONS</th>
+        <div className="hidden md:block" style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--bg-border)' }}>
+                <th style={{ padding: '12px 24px', fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>Student</th>
+                <th style={{ padding: '12px 24px', fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>Reg Number</th>
+                <th style={{ padding: '12px 24px', fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>Attendance</th>
+                <th style={{ padding: '12px 24px', fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-tertiary)' }}>Trend</th>
+                <th style={{ padding: '12px 24px', fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-tertiary)', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-outline-variant/20">
+            <tbody>
               {riskStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-on-surface-variant">
+                  <td colSpan={5} style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text-tertiary)' }}>
                     No at-risk students found. All enrolled students are above the 75% threshold.
                   </td>
                 </tr>
               ) : (
                 riskStudents.map((student) => (
-                  <tr key={student.id} className="hover:bg-surface-container/50 transition-colors">
-                    <td className="px-6 py-4">
+                  <tr
+                    key={student.id}
+                    style={{ borderBottom: '0.5px solid var(--bg-border)', transition: 'background 150ms' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-elevated)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                  >
+                    <td style={{ padding: '12px 24px' }}>
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-surface-variant flex items-center justify-center text-on-surface-variant font-bold">
-                          {student.name.charAt(0).toUpperCase()}
+                        <div style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-md)', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                          {(student.name || '?').charAt(0).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-title-lg text-on-surface">{student.name}</p>
-                          <p className="text-xs text-outline">{student.program}</p>
+                          <p style={{ fontFamily: 'var(--font-editorial)', fontSize: '16px', color: 'var(--text-primary)' }}>{student.name || 'Unknown'}</p>
+                          <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-tertiary)' }}>{student.program || ''}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-on-surface-variant font-body-sm">{student.reg}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1 w-32">
-                        <span className={`text-xs font-bold ${student.attendance < 50 ? 'text-error' : 'text-warning'}`}>{student.attendance}%</span>
-                        <div className="h-1.5 w-full bg-surface-variant rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full ${student.attendance < 50 ? 'bg-error' : 'bg-warning'}`} style={{ width: `${student.attendance}%` }}></div>
+                    <td style={{ padding: '12px 24px', fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--text-tertiary)' }}>{student.reg}</td>
+                    <td style={{ padding: '12px 24px' }}>
+                      <div style={{ width: '128px' }}>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600, color: student.attendance < 50 ? 'var(--danger)' : 'var(--warning)' }}>{student.attendance}%</span>
+                        <div style={{ height: '6px', width: '100%', background: 'var(--bg-elevated)', borderRadius: '9999px', overflow: 'hidden', marginTop: '4px' }}>
+                          <div style={{ height: '100%', borderRadius: '9999px', background: student.attendance < 50 ? 'var(--danger)' : 'var(--warning)', width: `${student.attendance}%` }} />
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className={`flex items-center gap-1 ${student.trend < 0 ? 'text-error' : student.trend > 0 ? 'text-success' : 'text-on-surface-variant'}`}>
+                    <td style={{ padding: '12px 24px' }}>
+                      <div className="flex items-center gap-1" style={{ color: student.trend < 0 ? 'var(--danger)' : student.trend > 0 ? 'var(--success)' : 'var(--text-tertiary)' }}>
                         {student.trend < 0 ? <TrendingDown className="w-4 h-4" /> : null}
-                        <span className="text-xs font-bold">{student.trend > 0 ? '+' : ''}{student.trend}%</span>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 600 }}>{student.trend > 0 ? '+' : ''}{student.trend}%</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td style={{ padding: '12px 24px' }}>
                       <div className="flex justify-end gap-2">
-                        <button className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"><Eye className="w-5 h-5"/></button>
-                        <button className="p-2 text-warning hover:bg-warning-bg rounded-lg transition-colors"><Mail className="w-5 h-5"/></button>
+                        <button style={{ padding: '8px', color: 'var(--kabu-maroon)', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 150ms' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--kabu-maroon-tint)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}><Eye className="w-5 h-5" /></button>
+                        <button style={{ padding: '8px', color: 'var(--warning)', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 150ms' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--warning-bg)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}><Mail className="w-5 h-5" /></button>
                       </div>
                     </td>
                   </tr>
