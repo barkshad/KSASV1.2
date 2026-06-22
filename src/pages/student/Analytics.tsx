@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Flame, Trophy, Lock, AlertTriangle, Loader2 } from 'lucide-react';
+import { Flame, Trophy, Lock, AlertTriangle, Loader2, TrendingUp, TrendingDown, Minus, Users } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useFirestoreRealtimeCollection } from '../../hooks/useFirestoreRealtime';
 import { db, collection, getDocs, query, where } from '../../lib/firebase';
@@ -130,6 +130,75 @@ export default function Analytics() {
 
     return result.sort((a, b) => a.pct - b.pct);
   }, [courseCodes, allSessions, attendanceList, courses]);
+
+  // Comparative analytics: student's rate vs class average per course
+  const [courseComparison, setCourseComparison] = useState<{ code: string; name: string; myRate: number; classAvg: number; diff: number }[]>([]);
+
+  useEffect(() => {
+    if (courseCodes.length === 0 || allSessions.length === 0) return;
+
+    const computeComparison = async () => {
+      const result: { code: string; name: string; myRate: number; classAvg: number; diff: number }[] = [];
+
+      for (const code of courseCodes) {
+        const courseSessions = allSessions.filter(s => s.courseCode === code);
+        if (courseSessions.length === 0) continue;
+
+        const myAtt = attendanceList.filter(a => a.courseCode === code);
+        const myPresent = myAtt.filter(a => a.status !== 'absent').length;
+        const myRate = courseSessions.length > 0 ? Math.round((myPresent / courseSessions.length) * 100) : 0;
+
+        let classTotal = 0;
+        let classAttended = 0;
+        for (const session of courseSessions) {
+          try {
+            const attSnap = await getDocs(collection(db, `${collections.SESSIONS}/${session.id}/attendance`));
+            const attCount = attSnap.size;
+            classTotal += session.enrolledCount || attCount;
+            classAttended += attCount;
+          } catch { /* skip */ }
+        }
+        const classAvg = classTotal > 0 ? Math.round((classAttended / classTotal) * 100) : 0;
+        const course = courses.find(c => c.code === code);
+        result.push({ code, name: course?.name || code, myRate, classAvg, diff: myRate - classAvg });
+      }
+
+      setCourseComparison(result.sort((a, b) => b.diff - a.diff));
+    };
+
+    computeComparison();
+  }, [courseCodes, allSessions, attendanceList, courses]);
+
+  // Trend: compare recent attendance vs older attendance
+  const attendanceTrend = useMemo(() => {
+    if (attendanceList.length < 4) return { direction: 'stable' as const, change: 0 };
+
+    const sorted = [...attendanceList].sort((a: any, b: any) => {
+      const da = a.date || '';
+      const db = b.date || '';
+      return da.localeCompare(db);
+    });
+
+    const mid = Math.floor(sorted.length / 2);
+    const firstHalf = sorted.slice(0, mid);
+    const secondHalf = sorted.slice(mid);
+
+    const rateHalf = (list: any[]) => {
+      if (list.length === 0) return 0;
+      const present = list.filter(a => a.status !== 'absent').length;
+      return Math.round((present / list.length) * 100);
+    };
+
+    const olderRate = rateHalf(firstHalf);
+    const recentRate = rateHalf(secondHalf);
+    const change = recentRate - olderRate;
+
+    let direction: 'improving' | 'declining' | 'stable' = 'stable';
+    if (change > 5) direction = 'improving';
+    else if (change < -5) direction = 'declining';
+
+    return { direction, change };
+  }, [attendanceList]);
 
   if (loadingSessions || loadingAttendance) {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
@@ -270,6 +339,105 @@ export default function Analytics() {
           )}
         </div>
 
+      </div>
+
+      {/* Comparative Analytics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Class Comparison */}
+        <div className="bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/20">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-title-lg font-bold text-primary">Your Performance vs Class</h3>
+            <Users className="text-on-surface-variant w-6 h-6" />
+          </div>
+          {courseComparison.length === 0 ? (
+            <div className="bg-surface-container-low p-4 rounded-lg text-center text-on-surface-variant">
+              Comparing your attendance to class averages...
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {courseComparison.map(c => (
+                <div key={c.code} className="p-3 rounded-lg bg-surface-container-low border border-outline-variant/20">
+                  <div className="flex justify-between items-center mb-2">
+                    <div>
+                      <h4 className="font-body-md font-bold text-primary">{c.code}</h4>
+                      <p className="font-body-sm text-on-surface-variant">{c.name}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`font-headline-md font-bold ${c.diff >= 0 ? 'text-success' : 'text-error'}`}>
+                        {c.diff > 0 ? '+' : ''}{c.diff}%
+                      </span>
+                      <p className="font-label-md text-on-surface-variant mt-1">vs class avg</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <div className="flex justify-between text-xs text-on-surface-variant mb-1">
+                        <span>You: {c.myRate}%</span>
+                        <span>Class: {c.classAvg}%</span>
+                      </div>
+                      <div className="h-2 bg-surface-dim rounded-full overflow-hidden relative">
+                        <div className="h-full bg-success rounded-full absolute" style={{ width: `${c.myRate}%` }}></div>
+                        <div className="h-full bg-on-surface-variant/30 rounded-full absolute" style={{ width: `${c.classAvg}%` }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Semester Trend */}
+        <div className="bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/20">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-title-lg font-bold text-primary">Attendance Trend</h3>
+            {attendanceTrend.direction === 'improving' ? (
+              <TrendingUp className="text-success w-6 h-6" />
+            ) : attendanceTrend.direction === 'declining' ? (
+              <TrendingDown className="text-error w-6 h-6" />
+            ) : (
+              <Minus className="text-on-surface-variant w-6 h-6" />
+            )}
+          </div>
+
+          <div className="text-center mb-6">
+            <div className={`w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-4 ${
+              attendanceTrend.direction === 'improving' ? 'bg-success-container text-success' :
+              attendanceTrend.direction === 'declining' ? 'bg-error-container text-error' :
+              'bg-surface-variant text-on-surface-variant'
+            }`}>
+              {attendanceTrend.direction === 'improving' ? (
+                <TrendingUp className="w-10 h-10" />
+              ) : attendanceTrend.direction === 'declining' ? (
+                <TrendingDown className="w-10 h-10" />
+              ) : (
+                <Minus className="w-10 h-10" />
+              )}
+            </div>
+            <h4 className="font-title-lg font-bold text-primary mb-2">
+              {attendanceTrend.direction === 'improving' ? 'Improving' :
+               attendanceTrend.direction === 'declining' ? 'Declining' : 'Stable'}
+            </h4>
+            <p className="font-body-sm text-on-surface-variant">
+              {attendanceTrend.direction === 'improving'
+                ? `Your attendance has improved by ${attendanceTrend.change}% in recent sessions.`
+                : attendanceTrend.direction === 'declining'
+                ? `Your attendance has dropped by ${Math.abs(attendanceTrend.change)}% in recent sessions.`
+                : 'Your attendance has remained consistent.'}
+            </p>
+          </div>
+
+          <div className="p-4 rounded-lg bg-surface-container-low border border-outline-variant/20">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-body-sm text-on-surface-variant">Recent sessions</span>
+              <span className="font-headline-sm text-primary">{Math.round((attendanceList.slice(Math.floor(attendanceList.length / 2)).filter((a: any) => a.status !== 'absent').length / Math.max(1, Math.ceil(attendanceList.length / 2))) * 100)}%</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="font-body-sm text-on-surface-variant">Older sessions</span>
+              <span className="font-headline-sm text-on-surface-variant">{Math.round((attendanceList.slice(0, Math.floor(attendanceList.length / 2)).filter((a: any) => a.status !== 'absent').length / Math.max(1, Math.floor(attendanceList.length / 2))) * 100)}%</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

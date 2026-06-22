@@ -71,10 +71,9 @@ export default function UserManagement() {
     setSaveResult(null);
     try {
       if (!newUser.uid || !newUser.name || !newUser.email || !newUser.role) {
-        throw new Error('All fields are required.');
+        throw new Error('Name, Email, ID, and Role are required.');
       }
 
-      // Use provided password or auto-generate — never shown in UI response
       const plainPw = newUser.plainPassword || generateInitialPassword();
       const hashedPw = hashPassword(plainPw);
 
@@ -84,8 +83,8 @@ export default function UserManagement() {
         email: newUser.email.toLowerCase().trim(),
         password: hashedPw,
         role: newUser.role as UserRecord['role'],
-        course: newUser.course?.trim(),
-        department: newUser.department?.trim(),
+        course: newUser.course?.trim() || undefined,
+        department: newUser.department?.trim() || undefined,
         status: 'active',
       };
 
@@ -97,6 +96,8 @@ export default function UserManagement() {
         role: userObj.role,
         status: userObj.status,
         password: hashedPw,
+        ...(userObj.course ? { course: userObj.course } : {}),
+        ...(userObj.department ? { department: userObj.department } : {}),
       }, { merge: true });
 
       const merged = [...users.filter((u) => u.uid !== userObj.uid), userObj];
@@ -105,8 +106,9 @@ export default function UserManagement() {
 
       setShowAddModal(false);
       setNewUser({ role: 'student' });
-      setSaveResult({ type: 'ok', msg: `Account created. Credentials have been set.` });
+      toast.success(`${userObj.name} added successfully.`);
     } catch (err: any) {
+      toast.error(err.message || 'Failed to create user.');
       setSaveResult({ type: 'err', msg: err.message || 'Failed to create user.' });
     } finally {
       setSavingUser(false);
@@ -393,6 +395,18 @@ export default function UserManagement() {
                   <option value="admin">Administrator</option>
                 </select>
               </div>
+              {newUser.role === 'student' && (
+                <div className="form-group">
+                  <label className="form-label" htmlFor="modal-course">Course</label>
+                  <input id="modal-course" value={newUser.course || ''} onChange={(e) => setNewUser({ ...newUser, course: e.target.value })} placeholder="e.g. BSc Computer Science" className="input-base" />
+                </div>
+              )}
+              {newUser.role === 'lecturer' && (
+                <div className="form-group">
+                  <label className="form-label" htmlFor="modal-dept">Department</label>
+                  <input id="modal-dept" value={newUser.department || ''} onChange={(e) => setNewUser({ ...newUser, department: e.target.value })} placeholder="e.g. Computer Science" className="input-base" />
+                </div>
+              )}
               <div className="form-group">
                 <label className="form-label" htmlFor="modal-pw">Initial Password <span className="font-normal normal-case text-on-surface-variant">(leave blank to auto-generate)</span></label>
                 <input id="modal-pw" type="password" value={newUser.plainPassword || ''} onChange={(e) => setNewUser({ ...newUser, plainPassword: e.target.value })} placeholder="Set a password" className="input-base" />
