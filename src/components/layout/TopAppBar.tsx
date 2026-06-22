@@ -39,7 +39,7 @@ export function TopAppBar({ role, user }: TopAppBarProps) {
       <div className="flex items-center gap-2 md:hidden">
         <div
           className="w-8 h-8 rounded-lg flex items-center justify-center"
-          style={{ background: 'var(--crimson)' }}
+          style={{ background: 'var(--kabu-maroon)' }}
         >
           <ShieldCheck className="w-4 h-4" style={{ width: 18, height: 18, color: '#F4A0A8' }} />
         </div>
@@ -85,9 +85,9 @@ export function TopAppBar({ role, user }: TopAppBarProps) {
             <div
               className="w-8 h-8 rounded-full font-bold text-xs flex items-center justify-center"
               style={{
-                background: 'var(--gold-primary)',
+                background: 'var(--kabu-gold)',
                 color: 'var(--text-inverse)',
-                border: '2px solid var(--gold-muted)',
+                border: '2px solid var(--kabu-gold-dark)',
               }}
             >
               {getInitials(user?.name)}

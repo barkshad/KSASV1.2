@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { db, collection, query, where, getDocs } from '../lib/firebase';
@@ -23,25 +23,84 @@ const ROLES = [
     title: 'Administrator',
     desc: 'System management & analytics',
     icon: Shield,
-    iconBg: 'bg-crimson',
   },
   {
     id: 'lecturer' as const,
     title: 'Lecturer',
     desc: 'Sessions, QR codes & attendance',
     icon: BookOpen,
-    iconBg: 'bg-gold-muted',
   },
   {
     id: 'student' as const,
     title: 'Student',
     desc: 'Check-in & attendance history',
     icon: GraduationCap,
-    iconBg: 'bg-info',
   },
 ] as const;
 
 type RoleId = typeof ROLES[number]['id'];
+
+function GoldParticles() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animId: number;
+    const particles: { x: number; y: number; r: number; dx: number; dy: number; o: number }[] = [];
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    for (let i = 0; i < 40; i++) {
+      particles.push({
+        x: Math.random() * canvas.offsetWidth,
+        y: Math.random() * canvas.offsetHeight,
+        r: Math.random() * 1.5 + 0.5,
+        dx: (Math.random() - 0.5) * 0.3,
+        dy: (Math.random() - 0.5) * 0.2,
+        o: Math.random() * 0.4 + 0.1,
+      });
+    }
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+      particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(201,168,76,${p.o})`;
+        ctx.fill();
+        p.x += p.dx;
+        p.y += p.dy;
+        if (p.x < 0 || p.x > canvas.offsetWidth) p.dx *= -1;
+        if (p.y < 0 || p.y > canvas.offsetHeight) p.dy *= -1;
+      });
+      animId = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('resize', resize);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      style={{ opacity: 0.6 }}
+    />
+  );
+}
 
 export default function RoleSelection() {
   const navigate = useNavigate();
@@ -133,34 +192,59 @@ export default function RoleSelection() {
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* ─── Left Panel: Hero ─────────────────────────────────────── */}
       <div
-        className="relative overflow-hidden flex-shrink-0 w-full lg:w-[640px]"
-        style={{ background: 'var(--color-crimson)' }}
+        className="relative overflow-hidden flex-shrink-0 w-full lg:w-[520px] xl:w-[600px]"
+        style={{
+          background: 'linear-gradient(165deg, #0A0C10 0%, #1a0f12 35%, #2a1015 60%, #1a0a0e 100%)',
+        }}
       >
-        {/* Subtle grid pattern */}
+        {/* Gold accent line */}
         <div
-          className="absolute inset-0 opacity-[0.03]"
+          className="absolute top-0 left-0 w-full h-[2px]"
+          style={{ background: 'linear-gradient(90deg, transparent, var(--kabu-gold), transparent)' }}
+        />
+
+        {/* Radial glow */}
+        <div
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] pointer-events-none"
           style={{
-            backgroundImage: `linear-gradient(var(--color-text-primary) 1px, transparent 1px), linear-gradient(90deg, var(--color-text-primary) 1px, transparent 1px)`,
-            backgroundSize: '40px 40px',
+            background: 'radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%)',
           }}
         />
 
-          <div className="relative z-10 px-8 py-10 lg:px-14 lg:py-12 flex flex-col justify-between min-h-[200px] lg:min-h-screen">
+        {/* Subtle grid pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.025]"
+          style={{
+            backgroundImage: `linear-gradient(var(--text-primary) 1px, transparent 1px), linear-gradient(90deg, var(--text-primary) 1px, transparent 1px)`,
+            backgroundSize: '48px 48px',
+          }}
+        />
+
+        {/* Floating particles */}
+        <GoldParticles />
+
+        <div className="relative z-10 px-10 py-10 lg:px-14 lg:py-14 flex flex-col justify-between min-h-[200px] lg:min-h-screen">
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 flex items-center justify-center">
-              <ShieldCheck className="w-8 h-8" style={{ color: 'var(--color-gold-primary)' }} />
+          <div className="flex items-center gap-3.5">
+            <div
+              className="w-11 h-11 flex items-center justify-center rounded-xl"
+              style={{
+                background: 'linear-gradient(135deg, var(--kabu-gold), var(--kabu-gold-dark))',
+                boxShadow: '0 4px 20px rgba(201,168,76,0.25)',
+              }}
+            >
+              <ShieldCheck className="w-6 h-6" style={{ color: 'var(--text-inverse)' }} />
             </div>
             <div>
               <p
-                className="text-lg font-bold tracking-tight leading-none"
-                style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text-primary)' }}
+                className="text-xl font-bold tracking-tight leading-none"
+                style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
               >
                 KSAS
               </p>
               <p
-                className="text-[10px] uppercase tracking-[0.2em] mt-0.5"
-                style={{ fontFamily: 'var(--font-body)', color: 'rgba(240,237,232,0.5)' }}
+                className="text-[10px] uppercase tracking-[0.25em] mt-0.5"
+                style={{ fontFamily: 'var(--font-body)', color: 'var(--kabu-gold-dark)' }}
               >
                 Smart Attendance
               </p>
@@ -169,18 +253,30 @@ export default function RoleSelection() {
 
           {/* Hero text */}
           <div className="hidden lg:block mt-auto">
-            <h1
-              className="font-display-hero mb-6"
-              style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-display)' }}
-            >
-              Attendance,<br />made intelligent.
-            </h1>
-            <p
-              className="font-body-lg max-w-sm mb-12"
-              style={{ color: 'rgba(240,237,232,0.6)', fontFamily: 'var(--font-body)' }}
-            >
-              QR-based check-in with real-time sync, device verification, and institutional analytics — built for Kabarak University.
-            </p>
+            <div className="mb-6">
+              <div
+                className="w-12 h-[2px] mb-8"
+                style={{ background: 'linear-gradient(90deg, var(--kabu-gold), transparent)' }}
+              />
+              <h1
+                className="font-display-hero mb-6"
+                style={{
+                  color: 'var(--text-primary)',
+                  fontFamily: 'var(--font-display)',
+                  lineHeight: '1.05',
+                }}
+              >
+                Attendance,
+                <br />
+                <span style={{ color: 'var(--kabu-gold)' }}>made intelligent.</span>
+              </h1>
+              <p
+                className="font-body-lg max-w-sm mb-12"
+                style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}
+              >
+                QR-based check-in with real-time sync, device verification, and institutional analytics — built for Kabarak University.
+              </p>
+            </div>
 
             {/* Feature list */}
             <div className="space-y-4">
@@ -188,22 +284,32 @@ export default function RoleSelection() {
                 { title: 'Rotating QR Codes', desc: 'Token refreshes every 30 seconds' },
                 { title: 'Device-Bound Check-In', desc: 'Prevents proxy attendance' },
                 { title: 'Real-Time Sync', desc: 'Instant updates across all devices' },
-              ].map((f) => (
-                <div key={f.title} className="flex items-start gap-3">
+              ].map((f, i) => (
+                <div key={f.title} className="flex items-start gap-4 group">
                   <div
-                    className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0"
-                    style={{ background: 'var(--color-gold-primary)' }}
-                  />
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-all duration-300 group-hover:scale-110"
+                    style={{
+                      background: 'var(--kabu-gold-subtle)',
+                      border: '1px solid rgba(201,168,76,0.2)',
+                    }}
+                  >
+                    <span
+                      className="text-xs font-bold"
+                      style={{ fontFamily: 'var(--font-mono)', color: 'var(--kabu-gold)' }}
+                    >
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                  </div>
                   <div>
                     <p
                       className="text-sm font-medium"
-                      style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-body)' }}
+                      style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}
                     >
                       {f.title}
                     </p>
                     <p
                       className="text-xs mt-0.5"
-                      style={{ color: 'rgba(240,237,232,0.5)', fontFamily: 'var(--font-body)' }}
+                      style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}
                     >
                       {f.desc}
                     </p>
@@ -212,31 +318,51 @@ export default function RoleSelection() {
               ))}
             </div>
           </div>
+
+          {/* University badge */}
+          <div className="hidden lg:flex items-center gap-2 mt-8 opacity-40">
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--kabu-gold)' }} />
+            <p className="text-[10px] uppercase tracking-[0.2em]" style={{ fontFamily: 'var(--font-body)', color: 'var(--text-secondary)' }}>
+              Kabarak University · Since 2000
+            </p>
+          </div>
         </div>
       </div>
 
       {/* ─── Right Panel: Auth ────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col justify-center p-10 lg:px-20 lg:py-16">
+      <div
+        className="flex-1 flex flex-col justify-center p-8 sm:p-10 lg:px-16 lg:py-12"
+        style={{ background: 'var(--bg-base)' }}
+      >
         <div className="w-full max-w-md mx-auto">
           {!selectedRole ? (
             /* ── Role Selection ────────────────────────────────── */
             <div className="animate-fade-in">
-              <div className="mb-8">
+              <div className="mb-10">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-6 h-[1px]" style={{ background: 'var(--kabu-gold)' }} />
+                  <span
+                    className="text-[10px] uppercase tracking-[0.2em] font-medium"
+                    style={{ fontFamily: 'var(--font-body)', color: 'var(--kabu-gold)' }}
+                  >
+                    Welcome
+                  </span>
+                </div>
                 <h2
-                  className="font-editorial-lg mb-2"
-                  style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-editorial)' }}
+                  className="font-editorial-lg mb-3"
+                  style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-editorial)' }}
                 >
                   Sign in to KSAS
                 </h2>
                 <p
                   className="font-body-md"
-                  style={{ color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}
+                  style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}
                 >
                   Select your role to continue.
                 </p>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {ROLES.map((role) => {
                   const Icon = role.icon;
                   return (
@@ -247,42 +373,47 @@ export default function RoleSelection() {
                       style={{ padding: 0 }}
                     >
                       <div
-                        className="flex items-center gap-5 p-5 transition-all duration-150"
+                        className="flex items-center gap-5 p-5 transition-all duration-200 cursor-pointer"
                         style={{
-                          background: 'var(--color-bg-surface)',
-                          border: '0.5px solid var(--color-bg-border)',
+                          background: 'var(--bg-surface)',
+                          border: '1px solid var(--bg-border)',
                           borderRadius: 'var(--radius-xl)',
                         }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = 'var(--color-gold-muted)';
-                          e.currentTarget.style.background = 'var(--color-bg-elevated)';
+                          e.currentTarget.style.borderColor = 'var(--kabu-gold-dark)';
+                          e.currentTarget.style.background = 'var(--bg-elevated)';
+                          e.currentTarget.style.transform = 'translateX(4px)';
+                          e.currentTarget.style.boxShadow = '0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(201,168,76,0.1)';
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = 'var(--color-bg-border)';
-                          e.currentTarget.style.background = 'var(--color-bg-surface)';
+                          e.currentTarget.style.borderColor = 'var(--bg-border)';
+                          e.currentTarget.style.background = 'var(--bg-surface)';
+                          e.currentTarget.style.transform = 'translateX(0)';
+                          e.currentTarget.style.boxShadow = 'none';
                         }}
                       >
                         <div
-                          className="w-12 h-12 flex items-center justify-center shrink-0"
+                          className="w-12 h-12 flex items-center justify-center shrink-0 transition-all duration-200"
                           style={{
                             background:
                               role.id === 'admin'
-                                ? 'var(--color-crimson)'
+                                ? 'linear-gradient(135deg, var(--kabu-maroon), var(--kabu-maroon-dark))'
                                 : role.id === 'lecturer'
-                                ? 'var(--color-gold-subtle)'
-                                : 'var(--color-info-bg)',
+                                ? 'linear-gradient(135deg, var(--kabu-gold), var(--kabu-gold-dark))'
+                                : 'linear-gradient(135deg, var(--info), #1d4ed8)',
                             borderRadius: 'var(--radius-lg)',
+                            boxShadow:
+                              role.id === 'admin'
+                                ? '0 4px 12px rgba(139,26,43,0.3)'
+                                : role.id === 'lecturer'
+                                ? '0 4px 12px rgba(201,168,76,0.3)'
+                                : '0 4px 12px rgba(37,99,235,0.3)',
                           }}
                         >
                           <Icon
                             className="w-6 h-6"
                             style={{
-                              color:
-                                role.id === 'admin'
-                                  ? '#F4A0A8'
-                                  : role.id === 'lecturer'
-                                  ? 'var(--color-gold-primary)'
-                                  : 'var(--color-info)',
+                              color: 'var(--text-primary)',
                             }}
                           />
                         </div>
@@ -291,40 +422,52 @@ export default function RoleSelection() {
                             className="text-base font-bold"
                             style={{
                               fontFamily: 'var(--font-display)',
-                              color: 'var(--color-text-primary)',
-                              letterSpacing: '-0.02em',
+                              color: 'var(--text-primary)',
+                              letterSpacing: '-0.01em',
                             }}
                           >
                             {role.title}
                           </p>
                           <p
                             className="text-xs mt-0.5"
-                            style={{ color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}
+                            style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}
                           >
                             {role.desc}
                           </p>
                         </div>
+                        <svg
+                          className="w-5 h-5 shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
+                          style={{ color: 'var(--kabu-gold)' }}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
                       </div>
                     </button>
                   );
                 })}
               </div>
 
-              <p
-                className="text-center font-body-sm mt-8"
-                style={{ color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-body)' }}
-              >
-                Your account is created by your institution administrator.
-              </p>
+              <div className="mt-10 pt-6" style={{ borderTop: '1px solid var(--bg-border)' }}>
+                <p
+                  className="text-center font-body-sm"
+                  style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}
+                >
+                  Your account is created by your institution administrator.
+                </p>
+              </div>
             </div>
           ) : (
             /* ── Login Form ────────────────────────────────────── */
             <div className="animate-slide-up">
               <button
                 onClick={handleBack}
-                className="flex items-center gap-1.5 font-body-sm mb-8 transition-colors"
+                className="flex items-center gap-2 font-body-sm mb-8 transition-all duration-200 group"
                 style={{
-                  color: 'var(--color-text-secondary)',
+                  color: 'var(--text-secondary)',
                   fontFamily: 'var(--font-body)',
                   background: 'none',
                   border: 'none',
@@ -332,62 +475,58 @@ export default function RoleSelection() {
                   padding: 0,
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'var(--color-gold-primary)';
+                  e.currentTarget.style.color = 'var(--kabu-gold)';
+                  e.currentTarget.style.transform = 'translateX(-2px)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = 'var(--color-text-secondary)';
+                  e.currentTarget.style.color = 'var(--text-secondary)';
+                  e.currentTarget.style.transform = 'translateX(0)';
                 }}
               >
-                <ArrowLeft className="w-4 h-4" /> Change role
+                <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
+                Change role
               </button>
 
               {activeRole && (
                 <div
-                  className="flex items-center gap-4 p-5 mb-8"
+                  className="flex items-center gap-4 p-4 mb-8"
                   style={{
-                    background: 'var(--color-bg-surface)',
-                    border: '0.5px solid var(--color-bg-border)',
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--bg-border)',
                     borderRadius: 'var(--radius-xl)',
                   }}
                 >
                   <div
-                    className="w-12 h-12 flex items-center justify-center shrink-0"
+                    className="w-11 h-11 flex items-center justify-center shrink-0"
                     style={{
                       background:
                         activeRole.id === 'admin'
-                          ? 'var(--color-crimson)'
+                          ? 'linear-gradient(135deg, var(--kabu-maroon), var(--kabu-maroon-dark))'
                           : activeRole.id === 'lecturer'
-                          ? 'var(--color-gold-subtle)'
-                          : 'var(--color-info-bg)',
+                          ? 'linear-gradient(135deg, var(--kabu-gold), var(--kabu-gold-dark))'
+                          : 'linear-gradient(135deg, var(--info), #1d4ed8)',
                       borderRadius: 'var(--radius-lg)',
                     }}
                   >
                     <activeRole.icon
-                      className="w-6 h-6"
-                      style={{
-                        color:
-                          activeRole.id === 'admin'
-                            ? '#F4A0A8'
-                            : activeRole.id === 'lecturer'
-                            ? 'var(--color-gold-primary)'
-                            : 'var(--color-info)',
-                      }}
+                      className="w-5 h-5"
+                      style={{ color: 'var(--text-primary)' }}
                     />
                   </div>
                   <div>
                     <p
-                      className="text-base font-bold"
+                      className="text-sm font-bold"
                       style={{
                         fontFamily: 'var(--font-display)',
-                        color: 'var(--color-text-primary)',
-                        letterSpacing: '-0.02em',
+                        color: 'var(--text-primary)',
+                        letterSpacing: '-0.01em',
                       }}
                     >
                       {activeRole.title}
                     </p>
                     <p
                       className="text-xs mt-0.5"
-                      style={{ color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}
+                      style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}
                     >
                       Sign in to your account
                     </p>
@@ -396,15 +535,24 @@ export default function RoleSelection() {
               )}
 
               <div className="mb-8">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-6 h-[1px]" style={{ background: 'var(--kabu-gold)' }} />
+                  <span
+                    className="text-[10px] uppercase tracking-[0.2em] font-medium"
+                    style={{ fontFamily: 'var(--font-body)', color: 'var(--kabu-gold)' }}
+                  >
+                    Credentials
+                  </span>
+                </div>
                 <h2
                   className="font-editorial-lg"
-                  style={{ color: 'var(--color-text-primary)', fontFamily: 'var(--font-editorial)' }}
+                  style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-editorial)' }}
                 >
                   Welcome back
                 </h2>
                 <p
                   className="font-body-md mt-1"
-                  style={{ color: 'var(--color-text-secondary)', fontFamily: 'var(--font-body)' }}
+                  style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}
                 >
                   Enter your credentials to continue.
                 </p>
@@ -414,9 +562,9 @@ export default function RoleSelection() {
                 <div
                   className="flex items-start gap-3 p-4 mb-6 font-body-sm animate-fade-in"
                   style={{
-                    background: 'var(--color-danger-bg)',
-                    border: '0.5px solid var(--color-danger)',
-                    borderRadius: 'var(--radius-md)',
+                    background: 'var(--danger-bg)',
+                    border: '1px solid rgba(139,26,43,0.4)',
+                    borderRadius: 'var(--radius-lg)',
                     color: '#F4A0A8',
                   }}
                 >
@@ -430,14 +578,14 @@ export default function RoleSelection() {
                   <label
                     className="form-label"
                     htmlFor="email"
-                    style={{ color: 'var(--color-text-secondary)' }}
+                    style={{ color: 'var(--text-secondary)' }}
                   >
                     Email
                   </label>
                   <div className="relative">
                     <Mail
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-                      style={{ color: 'var(--color-text-tertiary)' }}
+                      className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                      style={{ color: 'var(--text-tertiary)' }}
                     />
                     <input
                       id="email"
@@ -456,14 +604,14 @@ export default function RoleSelection() {
                   <label
                     className="form-label"
                     htmlFor="password"
-                    style={{ color: 'var(--color-text-secondary)' }}
+                    style={{ color: 'var(--text-secondary)' }}
                   >
                     Password
                   </label>
                   <div className="relative">
                     <Lock
-                      className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-                      style={{ color: 'var(--color-text-tertiary)' }}
+                      className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                      style={{ color: 'var(--text-tertiary)' }}
                     />
                     <input
                       id="password"
@@ -481,17 +629,17 @@ export default function RoleSelection() {
                       onClick={() => setShowPw((v) => !v)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
                       style={{
-                        color: 'var(--color-text-tertiary)',
+                        color: 'var(--text-tertiary)',
                         background: 'none',
                         border: 'none',
                         cursor: 'pointer',
                         padding: '4px',
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.color = 'var(--color-text-primary)';
+                        e.currentTarget.style.color = 'var(--text-primary)';
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.color = 'var(--color-text-tertiary)';
+                        e.currentTarget.style.color = 'var(--text-tertiary)';
                       }}
                       aria-label={showPw ? 'Hide password' : 'Show password'}
                     >
@@ -503,13 +651,35 @@ export default function RoleSelection() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="btn-primary w-full mt-2"
+                  className="w-full mt-3 transition-all duration-200"
                   style={{
                     height: '48px',
                     fontFamily: 'var(--font-body)',
-                    fontWeight: 500,
+                    fontWeight: 600,
                     fontSize: '14px',
-                    letterSpacing: '0.02em',
+                    letterSpacing: '0.03em',
+                    background: loading ? 'var(--kabu-gold-dark)' : 'linear-gradient(135deg, var(--kabu-gold), #d4b65c)',
+                    color: 'var(--text-inverse)',
+                    borderRadius: 'var(--radius-md)',
+                    border: 'none',
+                    cursor: loading ? 'wait' : 'pointer',
+                    boxShadow: '0 4px 16px rgba(201,168,76,0.3)',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!loading) {
+                      e.currentTarget.style.boxShadow = '0 6px 24px rgba(201,168,76,0.4)';
+                      e.currentTarget.style.transform = 'translateY(-1px)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!loading) {
+                      e.currentTarget.style.boxShadow = '0 4px 16px rgba(201,168,76,0.3)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }
                   }}
                 >
                   {loading ? (
@@ -522,12 +692,14 @@ export default function RoleSelection() {
                 </button>
               </form>
 
-              <p
-                className="text-center font-body-sm mt-8"
-                style={{ color: 'var(--color-text-tertiary)', fontFamily: 'var(--font-body)' }}
-              >
-                Account access issues? Contact your institution's IT support.
-              </p>
+              <div className="mt-10 pt-6" style={{ borderTop: '1px solid var(--bg-border)' }}>
+                <p
+                  className="text-center font-body-sm"
+                  style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}
+                >
+                  Account access issues? Contact your institution's IT support.
+                </p>
+              </div>
             </div>
           )}
         </div>

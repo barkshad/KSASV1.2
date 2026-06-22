@@ -38,6 +38,7 @@ export default function Reports() {
             studentId: a.studentId || '',
             studentName: a.studentName || '',
             studentEmail: a.studentEmail || '',
+            regNumber: a.regNumber || a.studentId || '',
             status: a.status || 'present',
             date: session.date || '',
             timeIn: formatTimeIn(a.timestamp),
@@ -45,6 +46,8 @@ export default function Reports() {
             courseName: session.courseName || '',
             room: session.room || '',
             lecturerName: session.lecturerName || '',
+            topicOfDay: session.topicOfDay || '',
+            deviceFingerprint: a.deviceFingerprint || '',
           });
         });
       }

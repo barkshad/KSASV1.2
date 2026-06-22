@@ -4,6 +4,7 @@ export interface AttendanceCsvRow {
   studentId: string;
   studentName: string;
   studentEmail: string;
+  regNumber: string;
   status: string;
   date: string;
   timeIn: string;
@@ -11,6 +12,8 @@ export interface AttendanceCsvRow {
   courseName: string;
   room: string;
   lecturerName: string;
+  topicOfDay: string;
+  deviceFingerprint: string;
 }
 
 export function formatTimeIn(timestamp: any): string {
@@ -39,6 +42,7 @@ export function buildAttendanceCsv(
     'Student ID',
     'Full Name',
     'Email',
+    'Reg Number',
     'Status',
     'Date',
     'Time In',
@@ -46,6 +50,8 @@ export function buildAttendanceCsv(
     'Course Name',
     'Room / Venue',
     'Lecturer',
+    'Topic of Day',
+    'Device Fingerprint',
   ];
 
   const escape = (value: unknown) =>
@@ -56,6 +62,7 @@ export function buildAttendanceCsv(
       row.studentId,
       row.studentName,
       row.studentEmail,
+      row.regNumber,
       row.status,
       row.date,
       row.timeIn,
@@ -63,6 +70,8 @@ export function buildAttendanceCsv(
       row.courseName,
       row.room,
       row.lecturerName,
+      row.topicOfDay,
+      row.deviceFingerprint,
     ]
       .map(escape)
       .join(',')
@@ -90,4 +99,27 @@ export function downloadCsv(
   document.body.removeChild(link);
 
   URL.revokeObjectURL(url);
+}
+
+export function exportSessionCSV(session: any, attendanceRecords: any[]): void {
+  const headers = ['Student Name', 'Registration Number', 'Check-In Time', 'Status', 'Device Fingerprint'];
+
+  const rows = attendanceRecords.map((r: any) => [
+    r.studentName || '',
+    r.studentId || '',
+    r.checkInTime ? new Date(r.checkInTime).toLocaleString() : (r.timestamp?.toDate ? r.timestamp.toDate().toLocaleString() : '—'),
+    r.status || 'PRESENT',
+    r.deviceFingerprint || 'N/A',
+  ]);
+
+  const escape = (cell: string) => `"${String(cell).replace(/"/g, '""')}"`;
+
+  const csv = [headers, ...rows].map(row => row.map(escape).join(',')).join('\n');
+
+  const safeCourse = (session.courseName || 'session').replace(/[^a-zA-Z0-9]/g, '_');
+  const safeDate = (session.date || new Date().toISOString().split('T')[0]);
+  const sessionId = (session.id || '').slice(0, 8);
+  const filename = `KSAS_${safeCourse}_${safeDate}_${sessionId}.csv`;
+
+  downloadCsv(filename, csv);
 }

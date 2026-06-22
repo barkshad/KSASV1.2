@@ -32,10 +32,10 @@ export default function AdminDashboard() {
       {/* Stat Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Total Students', value: totalStudents, color: 'var(--gold-primary)' },
-          { label: 'Total Lecturers', value: totalLecturers, color: 'var(--gold-primary)' },
-          { label: 'Active Courses', value: courses.length, color: 'var(--gold-primary)' },
-          { label: 'Live Sessions', value: activeSessions, color: activeSessions > 0 ? 'var(--success)' : 'var(--gold-primary)' },
+          { label: 'Total Students', value: totalStudents, color: 'var(--kabu-gold)' },
+          { label: 'Total Lecturers', value: totalLecturers, color: 'var(--kabu-gold)' },
+          { label: 'Active Courses', value: courses.length, color: 'var(--kabu-gold)' },
+          { label: 'Live Sessions', value: activeSessions, color: activeSessions > 0 ? 'var(--success)' : 'var(--kabu-gold)' },
         ].map((stat) => (
           <div
             key={stat.label}
@@ -102,7 +102,7 @@ export default function AdminDashboard() {
                   borderRadius: 'var(--radius-md)',
                 }}
               >
-                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '24px', fontWeight: 500, color: item.color || 'var(--gold-primary)' }}>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '24px', fontWeight: 500, color: item.color || 'var(--kabu-gold)' }}>
                   {item.value}
                 </p>
                 <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginTop: '4px' }}>
@@ -117,10 +117,10 @@ export default function AdminDashboard() {
         <div
           className="p-6 flex flex-col justify-between"
           style={{
-            background: 'var(--crimson)',
-            border: '0.5px solid var(--crimson)',
+            background: 'var(--kabu-maroon)',
+            border: '0.5px solid var(--kabu-maroon)',
             borderRadius: 'var(--radius-lg)',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 0 0 0.5px var(--crimson)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 0 0 0.5px var(--kabu-maroon)',
           }}
         >
           <div className="relative z-10">
@@ -168,7 +168,7 @@ export default function AdminDashboard() {
             className="mt-6 w-full py-2.5 font-bold text-xs uppercase tracking-wider transition-all z-10 relative"
             style={{
               background: 'var(--text-inverse)',
-              color: 'var(--crimson)',
+              color: 'var(--kabu-maroon)',
               borderRadius: 'var(--radius-md)',
               border: 'none',
               cursor: 'pointer',
@@ -198,10 +198,10 @@ export default function AdminDashboard() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--gold-primary)' }} />
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--kabu-gold)' }} />
                 <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-secondary)' }}>Student-to-Lecturer Ratio</span>
               </div>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 500, color: 'var(--gold-primary)' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 500, color: 'var(--kabu-gold)' }}>
                 {totalLecturers > 0 ? (totalStudents / totalLecturers).toFixed(1) : '--'}:1
               </span>
             </div>
@@ -210,7 +210,7 @@ export default function AdminDashboard() {
                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)' }} />
                 <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-secondary)' }}>Avg Sessions/Course</span>
               </div>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 500, color: 'var(--gold-primary)' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 500, color: 'var(--kabu-gold)' }}>
                 {courses.length > 0 ? (sessions.length / courses.length).toFixed(1) : '--'}
               </span>
             </div>
@@ -240,8 +240,8 @@ export default function AdminDashboard() {
                 cursor: 'pointer',
               }}
             >
-              <UserPlus className="w-6 h-6 mb-2" style={{ color: 'var(--gold-primary)' }} />
-              <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--gold-primary)', textAlign: 'center' }}>
+              <UserPlus className="w-6 h-6 mb-2" style={{ color: 'var(--kabu-gold)' }} />
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--kabu-gold)', textAlign: 'center' }}>
                 Create User
               </span>
             </button>

@@ -1,12 +1,14 @@
 import React, { useMemo, useEffect, useState, useCallback } from 'react';
-import { Radio, StopCircle, QrCode, AlertCircle, FileBarChart, Calendar, Loader2, Bookmark } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Radio, StopCircle, QrCode, AlertCircle, FileBarChart, Calendar, Loader2, Bookmark, DownloadCloud, CheckCircle, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
 import { useFirestoreRealtimeCollection } from '../../hooks/useFirestoreRealtime';
-import { db, collection, addDoc, serverTimestamp, doc, updateDoc, onSnapshot } from '../../lib/firebase';
+import { db, collection, addDoc, serverTimestamp, doc, updateDoc, onSnapshot, getDocs } from '../../lib/firebase';
 import { collections, archiveSession } from '../../lib/db';
 import { generateSessionTOTPSecret } from '../../lib/totp';
+import { exportSessionCSV } from '../../lib/csvExport';
 
 export default function LecturerDashboard() {
   const navigate = useNavigate();
@@ -20,6 +22,9 @@ export default function LecturerDashboard() {
 
   const [starting, setStarting] = useState(false);
   const [attendanceCount, setAttendanceCount] = useState(0);
+  const [ending, setEnding] = useState(false);
+  const [showEndConfirm, setShowEndConfirm] = useState(false);
+  const [endResult, setEndResult] = useState<{ session: any; attendance: any[] } | null>(null);
 
   useEffect(() => {
     if (!activeSession?.id) {
@@ -70,21 +75,51 @@ export default function LecturerDashboard() {
 
   const handleEndSession = async () => {
     if (!activeSession) return;
-    if (confirm('End this session? Attendance data will be archived.')) {
-      try {
-        await updateDoc(doc(db, collections.SESSIONS, activeSession.id), { status: 'closed' });
-        await archiveSession(activeSession.id);
-      } catch (err) {
-        console.error('Failed to end session', err);
-        toast.error('Failed to end session.');
-      }
+    setShowEndConfirm(true);
+  };
+
+  const confirmEndSession = async () => {
+    if (!activeSession || ending) return;
+    setEnding(true);
+    try {
+      const attCollRef = collection(db, `${collections.SESSIONS}/${activeSession.id}/attendance`);
+      const snapshot = await getDocs(attCollRef);
+      const records = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Build CSV data for archive
+      const headers = ['Student Name','Registration Number','Check-In Time','Status','Device Fingerprint'];
+      const rows = records.map((r: any) => [
+        r.studentName || '',
+        r.studentId || '',
+        r.timestamp?.toDate ? r.timestamp.toDate().toLocaleString() : '—',
+        r.status || 'PRESENT',
+        r.deviceFingerprint || 'N/A',
+      ]);
+      const escape = (cell: string) => `"${String(cell).replace(/"/g, '""')}"`;
+      const csvStr = [headers, ...rows].map(row => row.map(escape).join(',')).join('\n');
+
+      await updateDoc(doc(db, collections.SESSIONS, activeSession.id), { status: 'closed' });
+      await archiveSession(activeSession.id, csvStr);
+
+      setEndResult({ session: { ...activeSession, id: activeSession.id }, attendance: records });
+      setShowEndConfirm(false);
+    } catch (err) {
+      console.error('Failed to end session', err);
+      toast.error('Failed to end session.');
+    } finally {
+      setEnding(false);
     }
+  };
+
+  const handleDownloadCsv = () => {
+    if (!endResult) return;
+    exportSessionCSV(endResult.session, endResult.attendance);
   };
 
   if (loadingSessions) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--gold-primary)' }} />
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--kabu-gold)' }} />
       </div>
     );
   }
@@ -275,7 +310,7 @@ export default function LecturerDashboard() {
                         outline: 'none',
                         boxSizing: 'border-box',
                       }}
-                      onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--gold-muted)'; }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--kabu-gold-dark)'; }}
                       onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--bg-border)'; }}
                       onChange={(e) => {
                         const next = e.currentTarget.nextElementSibling;
@@ -321,7 +356,7 @@ export default function LecturerDashboard() {
           </h3>
           <div className="grid grid-cols-2 gap-3 flex-1">
             {[
-              { icon: AlertCircle, label: 'Notify Absentees', bg: 'var(--gold-subtle)', color: 'var(--gold-primary)' },
+              { icon: AlertCircle, label: 'Notify Absentees', bg: 'var(--kabu-gold-subtle)', color: 'var(--kabu-gold)' },
               { icon: FileBarChart, label: 'Generate Report', bg: 'var(--bg-elevated)', color: 'var(--text-secondary)' },
               { icon: Calendar, label: 'Schedule', bg: 'var(--success-bg)', color: 'var(--success)' },
               { icon: AlertCircle, label: 'Risk Monitor', bg: 'var(--danger-bg)', color: 'var(--danger)' },
@@ -376,7 +411,7 @@ export default function LecturerDashboard() {
                     maxWidth: '48px',
                     height: `${Math.max(pct, 4)}%`,
                     minHeight: '8px',
-                    background: 'var(--gold-primary)',
+                    background: 'var(--kabu-gold)',
                     opacity: 0.3,
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
@@ -392,6 +427,129 @@ export default function LecturerDashboard() {
         </div>
 
       </div>
+
+      {/* End Session Confirmation Modal */}
+      {showEndConfirm && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+          onClick={() => { if (!ending) setShowEndConfirm(false); }}
+        >
+          <div
+            className="w-full max-w-md animate-scale-in"
+            style={{
+              background: 'var(--bg-elevated)',
+              border: '0.5px solid var(--bg-border)',
+              borderRadius: 'var(--radius-xl)',
+              padding: '32px',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: 'var(--radius-full)',
+                  background: 'var(--danger-bg)',
+                  border: '0.5px solid var(--danger)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                }}
+              >
+                <StopCircle className="w-5 h-5" style={{ color: '#F4A0A8' }} />
+              </div>
+              <h3 style={{ fontFamily: 'var(--font-editorial)', fontSize: '22px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+                End Session
+              </h3>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-secondary)', marginTop: '8px' }}>
+                This will close {activeSession?.courseName}. Attendance data will be archived and a CSV download will be offered.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowEndConfirm(false)}
+                disabled={ending}
+                className="btn-ghost flex-1"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmEndSession}
+                disabled={ending}
+                className="btn-danger flex-1"
+              >
+                {ending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {ending ? 'Ending…' : 'End Session'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* End Session Success Modal */}
+      {endResult && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setEndResult(null)}
+        >
+          <div
+            className="w-full max-w-md animate-scale-in"
+            style={{
+              background: 'var(--bg-elevated)',
+              border: '0.5px solid var(--bg-border)',
+              borderRadius: 'var(--radius-xl)',
+              padding: '32px',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: 'var(--radius-full)',
+                  background: 'var(--success-bg)',
+                  border: '0.5px solid var(--success)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                }}
+              >
+                <CheckCircle className="w-5 h-5" style={{ color: 'var(--success)' }} />
+              </div>
+              <h3 style={{ fontFamily: 'var(--font-editorial)', fontSize: '22px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+                Session ended
+              </h3>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-secondary)', marginTop: '8px' }}>
+                {endResult.session.courseName} &nbsp;·&nbsp; {endResult.session.date && new Date(endResult.session.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} &nbsp;·&nbsp; {endResult.attendance.length} students
+              </p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleDownloadCsv}
+                className="btn-primary w-full flex items-center justify-center gap-2"
+                style={{ fontFamily: 'Outfit, sans-serif', fontSize: '14px', fontWeight: 500, padding: '10px 20px' }}
+              >
+                <DownloadCloud className="w-4 h-4" />
+                Download Attendance CSV
+              </button>
+              <button
+                onClick={() => setEndResult(null)}
+                className="btn-ghost w-full"
+              >
+                Back to Dashboard
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

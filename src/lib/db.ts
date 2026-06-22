@@ -76,7 +76,7 @@ export async function checkInStudent(sessionId: string, studentData: any, token:
   });
 }
 
-export async function archiveSession(sessionId: string) {
+export async function archiveSession(sessionId: string, csvData?: string) {
   const sessionDocRef = doc(db, collections.SESSIONS, sessionId);
   const sessionDoc = await getDoc(sessionDocRef);
   if (!sessionDoc.exists()) return;
@@ -86,14 +86,56 @@ export async function archiveSession(sessionId: string) {
   const attendanceQuery = collection(db, `${collections.SESSIONS}/${sessionId}/attendance`);
   const attendanceSnapshot = await getDocs(attendanceQuery);
 
-  const attendanceList = attendanceSnapshot.docs.map(d => d.data());
+  const attendanceList = attendanceSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
-  const archiveData = {
+  const present = attendanceList.filter((a: any) => a.status === 'present' || a.status === 'late').length;
+  const absent = Math.max(0, (sessionData.enrolledCount || 0) - present);
+  const attendanceRate = (sessionData.enrolledCount || 0) > 0
+    ? Math.round((present / (sessionData.enrolledCount || 1)) * 1000) / 10
+    : 0;
+
+  // Save individual session archive
+  await uploadJSONToCloudinary(`session_${sessionId}.json`, {
     ...sessionData,
     attendance: attendanceList
+  });
+
+  // Append to master session-archive.json
+  const archiveKey = 'session-archive';
+  let existingArchive: { sessions: any[] } = { sessions: [] };
+  try {
+    const existing = await fetchJSONFromCloudinary(`${archiveKey}.json`);
+    if (existing && typeof existing === 'object' && Array.isArray((existing as any).sessions)) {
+      existingArchive = existing as { sessions: any[] };
+    }
+  } catch {
+    // start fresh
+  }
+
+  const csvFileName = csvData
+    ? `KSAS_${(sessionData.courseName || 'session').replace(/[^a-zA-Z0-9]/g, '_')}_${sessionData.date || ''}_${sessionId.slice(0, 8)}.csv`
+    : '';
+
+  const newEntry = {
+    id: sessionId,
+    courseName: sessionData.courseName || '',
+    courseCode: sessionData.courseCode || '',
+    lecturerName: sessionData.lecturerName || '',
+    date: sessionData.date || '',
+    startTime: sessionData.startTime || '',
+    endTime: sessionData.endTime || '',
+    topicOfDay: sessionData.topicOfDay || '',
+    totalStudents: sessionData.enrolledCount || 0,
+    present,
+    absent,
+    attendanceRate,
+    csvFileName,
+    csvData: csvData || '',
+    createdAt: new Date().toISOString(),
   };
 
-  await uploadJSONToCloudinary(`session_${sessionId}.json`, archiveData);
+  existingArchive.sessions.unshift(newEntry);
+  await uploadJSONToCloudinary(`${archiveKey}.json`, existingArchive);
 }
 
 export async function closeSession(sessionId: string) {

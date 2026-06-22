@@ -2,122 +2,129 @@
 @import "tailwindcss";
 
 :root {
-  /* Backgrounds */
-  --bg-void: #0A0C10;
-  --bg-base: #0F1117;
-  --bg-surface: #161B24;
-  --bg-elevated: #1C2333;
-  --bg-border: #252D3D;
+  /* === KABARAK OFFICIAL BRAND COLORS === */
 
-  /* Gold accent */
-  --gold-primary: #C9A84C;
-  --gold-muted: #8B6F2E;
-  --gold-subtle: #2A2010;
-  --gold-glow: rgba(201,168,76,0.12);
+  /* Maroon — primary surfaces */
+  --kabu-maroon:          #7B1A2B;
+  --kabu-maroon-dark:     #55121D;
+  --kabu-maroon-deeper:   #380C13;
+  --kabu-maroon-muted:    #9E2336;
+  --kabu-maroon-tint:     #1C0509;
+  --kabu-maroon-subtle:   #2E0A10;
 
-  /* Kabarak crimson */
-  --crimson: #8B1A2B;
-  --crimson-muted: #5C1019;
+  /* Green — secondary / success */
+  --kabu-green:           #2C6B3F;
+  --kabu-green-light:     #3D8F56;
+  --kabu-green-dark:      #1A4227;
+  --kabu-green-subtle:    #0D2116;
 
-  /* Text */
-  --text-primary: #F0EDE8;
-  --text-secondary: #8A94A6;
-  --text-tertiary: #4A5568;
-  --text-inverse: #0F1117;
+  /* Gold — accent */
+  --kabu-gold:            #C9A84C;
+  --kabu-gold-light:      #DFC070;
+  --kabu-gold-dark:       #8B6F2E;
+  --kabu-gold-subtle:     #241A06;
+  --kabu-gold-glow:       rgba(201,168,76,0.12);
 
-  /* Semantic */
-  --success: #2D7A4F;
-  --success-bg: #0D2418;
-  --warning: #B8860B;
-  --warning-bg: #1E1A06;
-  --danger: #8B1A2B;
-  --danger-bg: #200A0D;
-  --info: #2563EB;
-  --info-bg: #0A1628;
+  /* === BACKGROUND HIERARCHY (maroon-dark, not navy) === */
+  --bg-void:       #1C0509;    /* deepest — body, sidebar */
+  --bg-base:       #2E0A10;    /* page background */
+  --bg-surface:    #3D0E15;    /* cards, panels */
+  --bg-elevated:   #4E121B;    /* modals, dropdowns, hover */
+  --bg-border:     #6B1A26;    /* dividers, input borders */
 
-  /* Spacing */
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 40px;
-  --space-2xl: 64px;
+  /* === TEXT === */
+  --text-primary:  #F5F0ED;    /* headings, labels */
+  --text-secondary:#B0A090;    /* body, descriptions */
+  --text-tertiary: #7A6055;    /* placeholders, disabled */
+  --text-inverse:  #1C0509;    /* text on gold buttons */
+  --text-on-maroon:#F5F0ED;    /* text on maroon surfaces */
 
-  /* Radius */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 20px;
-  --radius-full: 9999px;
+  /* === SEMANTIC === */
+  --success:       #3D8F56;    /* attendance confirmed — Kabarak green */
+  --success-bg:    #0D2116;
+  --warning:       #C9A84C;    /* at-risk — Kabarak gold */
+  --warning-bg:    #241A06;
+  --danger:        #C0392B;    /* absent / critical */
+  --danger-bg:     #2D0A08;
+  --info:          #2E6DA4;    /* QR active, session live */
+  --info-bg:       #0A1A2E;
+
+  /* === SPACING === */
+  --space-xs: 4px;  --space-sm: 8px;   --space-md: 16px;
+  --space-lg: 24px; --space-xl: 40px;  --space-2xl: 64px;
+
+  /* === RADIUS === */
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px;
+  --radius-xl: 20px; --radius-full: 9999px;
 }
 
 @theme {
-  /* ── Sovereign Depth Color System (Tailwind) ──────────────────── */
-  --color-bg-void: #0A0C10;
-  --color-bg-base: #0F1117;
-  --color-bg-surface: #161B24;
-  --color-bg-elevated: #1C2333;
-  --color-bg-border: #252D3D;
+  /* ── Kabarak Brand Color System (Tailwind) ────────────────────── */
+  --color-bg-void: #1C0509;
+  --color-bg-base: #2E0A10;
+  --color-bg-surface: #3D0E15;
+  --color-bg-elevated: #4E121B;
+  --color-bg-border: #6B1A26;
 
-  --color-gold-primary: #C9A84C;
-  --color-gold-muted: #8B6F2E;
-  --color-gold-subtle: #2A2010;
+  --color-kabu-gold: #C9A84C;
+  --color-kabu-gold-dark: #8B6F2E;
+  --color-kabu-gold-subtle: #241A06;
 
-  --color-crimson: #8B1A2B;
-  --color-crimson-muted: #5C1019;
+  --color-kabu-maroon: #7B1A2B;
+  --color-kabu-maroon-dark: #55121D;
 
-  --color-text-primary: #F0EDE8;
-  --color-text-secondary: #8A94A6;
-  --color-text-tertiary: #4A5568;
-  --color-text-inverse: #0F1117;
+  --color-text-primary: #F5F0ED;
+  --color-text-secondary: #B0A090;
+  --color-text-tertiary: #7A6055;
+  --color-text-inverse: #1C0509;
 
-  --color-success: #2D7A4F;
-  --color-success-bg: #0D2418;
-  --color-warning: #B8860B;
-  --color-warning-bg: #1E1A06;
-  --color-danger: #8B1A2B;
-  --color-danger-bg: #200A0D;
-  --color-info: #2563EB;
-  --color-info-bg: #0A1628;
+  --color-success: #3D8F56;
+  --color-success-bg: #0D2116;
+  --color-warning: #C9A84C;
+  --color-warning-bg: #241A06;
+  --color-danger: #C0392B;
+  --color-danger-bg: #2D0A08;
+  --color-info: #2E6DA4;
+  --color-info-bg: #0A1A2E;
 
   /* ── Legacy tokens (kept for compatibility) ──────────────────── */
-  --color-surface: #0F1117;
-  --color-surface-dim: #161B24;
-  --color-surface-bright: #1C2333;
-  --color-surface-container-lowest: #0A0C10;
-  --color-surface-container-low: #0F1117;
-  --color-surface-container: #161B24;
-  --color-surface-container-high: #1C2333;
-  --color-surface-container-highest: #252D3D;
-  --color-on-surface: #F0EDE8;
-  --color-on-surface-variant: #8A94A6;
-  --color-inverse-surface: #F0EDE8;
-  --color-inverse-on-surface: #0F1117;
-  --color-outline: #4A5568;
-  --color-outline-variant: #252D3D;
+  --color-surface: #2E0A10;
+  --color-surface-dim: #3D0E15;
+  --color-surface-bright: #4E121B;
+  --color-surface-container-lowest: #1C0509;
+  --color-surface-container-low: #2E0A10;
+  --color-surface-container: #3D0E15;
+  --color-surface-container-high: #4E121B;
+  --color-surface-container-highest: #6B1A26;
+  --color-on-surface: #F5F0ED;
+  --color-on-surface-variant: #B0A090;
+  --color-inverse-surface: #F5F0ED;
+  --color-inverse-on-surface: #1C0509;
+  --color-outline: #7A6055;
+  --color-outline-variant: #6B1A26;
   --color-surface-tint: #C9A84C;
   --color-primary: #C9A84C;
-  --color-on-primary: #0F1117;
-  --color-primary-container: #2A2010;
+  --color-on-primary: #1C0509;
+  --color-primary-container: #241A06;
   --color-on-primary-container: #C9A84C;
   --color-inverse-primary: #8B6F2E;
   --color-secondary: #8B6F2E;
-  --color-on-secondary: #F0EDE8;
-  --color-secondary-container: #2A2010;
+  --color-on-secondary: #F5F0ED;
+  --color-secondary-container: #241A06;
   --color-on-secondary-container: #C9A84C;
-  --color-tertiary: #2563EB;
-  --color-on-tertiary: #F0EDE8;
-  --color-tertiary-container: #0A1628;
+  --color-tertiary: #2E6DA4;
+  --color-on-tertiary: #F5F0ED;
+  --color-tertiary-container: #0A1A2E;
   --color-on-tertiary-container: #6B9FD4;
-  --color-on-success: #F0EDE8;
-  --color-success-container: #0D2418;
-  --color-on-success-container: #2D7A4F;
-  --color-error: #8B1A2B;
-  --color-on-error: #F0EDE8;
-  --color-error-container: #200A0D;
-  --color-on-error-container: #F4A0A8;
-  --color-background: #0A0C10;
-  --color-on-background: #F0EDE8;
+  --color-on-success: #F5F0ED;
+  --color-success-container: #0D2116;
+  --color-on-success-container: #3D8F56;
+  --color-error: #C0392B;
+  --color-on-error: #F5F0ED;
+  --color-error-container: #2D0A08;
+  --color-on-error-container: #F4B8C0;
+  --color-background: #1C0509;
+  --color-on-background: #F5F0ED;
 
   /* ── Typography ──────────────────────────────────────────────── */
   --font-display: "Big Shoulders Display", "Inter", sans-serif;
@@ -259,7 +266,7 @@ body {
 
 /* ── Focus styles ─────────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid var(--gold-primary);
+  outline: 2px solid var(--kabu-gold);
   outline-offset: 2px;
 }
 
@@ -304,8 +311,8 @@ html, body, #root {
     position: fixed;
     left: 0;
     top: 0;
-    width: 240px;
-    min-width: 240px;
+    width: 280px;
+    min-width: 280px;
     height: 100vh;
     display: flex;
     flex-direction: column;
@@ -331,8 +338,8 @@ html, body, #root {
     background: var(--bg-elevated);
 }
 .sidebar-item.active {
-    color: var(--gold-primary);
-    background: var(--gold-glow);
+    color: var(--kabu-gold);
+    background: var(--kabu-gold-glow);
 }
 .sidebar-item.active::before {
     content: '';
@@ -341,7 +348,7 @@ html, body, #root {
     top: 0;
     bottom: 0;
     width: 3px;
-    background: var(--gold-primary);
+    background: var(--kabu-gold);
     border-radius: 0 2px 2px 0;
 }
 
@@ -367,7 +374,7 @@ html, body, #root {
 }
 
 .with-sidebar {
-    margin-left: 240px;
+    margin-left: 280px;
 }
 
 @media (max-width: 767px) {
@@ -394,8 +401,8 @@ html, body, #root {
     color: var(--text-primary);
 }
 .nav-link.active {
-    color: var(--gold-primary);
-    background: var(--gold-glow);
+    color: var(--kabu-gold);
+    background: var(--kabu-gold-glow);
 }
 
 .mobile-nav-item {
@@ -409,7 +416,7 @@ html, body, #root {
     min-width: 56px;
 }
 .mobile-nav-item.active {
-    color: var(--gold-primary);
+    color: var(--kabu-gold);
 }
 
 /* ── Cards & Containers ──────────────────────────────────────── */
@@ -438,13 +445,13 @@ html, body, #root {
     width: 80px;
     height: 80px;
     border-radius: var(--radius-full);
-    background: var(--gold-primary);
+    background: var(--kabu-gold);
     color: var(--text-inverse);
     font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 3px solid var(--gold-muted);
+    border: 3px solid var(--kabu-gold-dark);
 }
 
 /* ── Badges ──────────────────────────────────────────────────── */
@@ -462,9 +469,9 @@ html, body, #root {
     text-transform: uppercase;
 }
 .badge-primary {
-    background: var(--gold-subtle);
-    color: var(--gold-primary);
-    border: 0.5px solid var(--gold-muted);
+    background: var(--kabu-gold-subtle);
+    color: var(--kabu-gold);
+    border: 0.5px solid var(--kabu-gold-dark);
 }
 .badge-neutral {
     background: var(--bg-elevated);
@@ -498,7 +505,7 @@ html, body, #root {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    background: var(--gold-primary);
+    background: var(--kabu-gold);
     color: var(--text-inverse);
     border-radius: var(--radius-md);
     font-family: 'Outfit', sans-serif;
@@ -534,7 +541,7 @@ html, body, #root {
     transition: border-color 150ms ease, color 150ms ease;
 }
 .btn-ghost:hover {
-    border-color: var(--gold-muted);
+    border-color: var(--kabu-gold-dark);
     color: var(--text-primary);
 }
 
@@ -543,9 +550,9 @@ html, body, #root {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    background: var(--crimson-muted);
-    color: #F4A0A8;
-    border: 0.5px solid var(--crimson);
+    background: var(--danger-bg);
+    color: var(--danger);
+    border: 0.5px solid var(--danger);
     border-radius: var(--radius-md);
     font-family: 'Outfit', sans-serif;
     font-size: 14px;
@@ -572,7 +579,7 @@ html, body, #root {
     transition: border-color 150ms ease, background 150ms ease, color 150ms ease;
 }
 .btn-icon:hover {
-    border-color: var(--gold-muted);
+    border-color: var(--kabu-gold-dark);
     background: var(--bg-elevated);
     color: var(--text-primary);
 }
@@ -605,7 +612,7 @@ html, body, #root {
     align-items: center;
     gap: 4px;
     font-size: 12px;
-    color: #F4A0A8;
+    color: var(--danger);
     margin-top: 4px;
     font-weight: 500;
 }
@@ -623,7 +630,7 @@ html, body, #root {
     transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 .input-base:focus {
-    border-color: var(--gold-primary);
+    border-color: var(--kabu-gold);
     box-shadow: 0 0 0 2px rgba(201,168,76,0.15);
 }
 .input-base::placeholder {
@@ -643,7 +650,7 @@ html, body, #root {
     transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 .input-with-icon-l:focus {
-    border-color: var(--gold-primary);
+    border-color: var(--kabu-gold);
     box-shadow: 0 0 0 2px rgba(201,168,76,0.15);
 }
 .input-with-icon-l::placeholder {

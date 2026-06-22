@@ -4,7 +4,7 @@ import { cn } from '../../lib/utils';
 import {
   LayoutDashboard, School, BarChart, Calendar, Settings,
   BookOpen, Users, FileText, LogOut, ShieldCheck,
-  QrCode, AlertTriangle
+  QrCode, AlertTriangle, Archive, BarChart3,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -20,9 +20,9 @@ export function AvatarCircle({ name, size = 'md' }: { name: string; size?: 'sm' 
     <div
       className={`${sizeClass} rounded-full font-bold flex items-center justify-center shrink-0`}
       style={{
-        background: 'var(--gold-primary)',
+        background: 'var(--kabu-gold)',
         color: 'var(--text-inverse)',
-        border: '2px solid var(--gold-muted)',
+        border: '2px solid var(--kabu-gold-dark)',
       }}
     >
       {initials}
@@ -73,7 +73,7 @@ export function DesktopSidebar({ role, user }: DesktopSidebarProps) {
       <div className="flex items-center gap-3 px-5 py-5 shrink-0" style={{ borderBottom: '0.5px solid var(--bg-border)' }}>
         <div
           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: 'var(--crimson)' }}
+          style={{ background: 'var(--kabu-maroon)' }}
         >
           <ShieldCheck className="w-5 h-5" style={{ color: '#F4A0A8' }} />
         </div>

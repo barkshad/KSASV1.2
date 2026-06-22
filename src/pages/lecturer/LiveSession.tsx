@@ -146,6 +146,7 @@ export default function LiveSession() {
       studentId: a.studentId || '',
       studentName: a.studentName || '',
       studentEmail: a.studentEmail || '',
+      regNumber: a.studentId || '',
       status: a.status || 'present',
       date: sessionData.date || '',
       timeIn: formatTimeIn(a.timestamp),
@@ -154,6 +155,7 @@ export default function LiveSession() {
       room: sessionData.room || '',
       lecturerName: sessionData.lecturerName || '',
       topicOfDay: sessionData.topicOfDay || '',
+      deviceFingerprint: a.deviceFingerprint || '',
     }));
 
     const csv = buildAttendanceCsv(rows);

@@ -64,7 +64,7 @@ export default function StudentDashboard() {
   if (loadingEnrollments || loadingSessions || loadingAttendance) {
       return (
         <div className="flex h-screen items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--gold-primary)' }} />
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--kabu-gold)' }} />
         </div>
       );
   }
@@ -136,15 +136,15 @@ export default function StudentDashboard() {
           }}
         >
           <div className="flex items-center gap-2 mb-2">
-            <div className="p-2" style={{ background: 'var(--gold-subtle)', borderRadius: 'var(--radius-md)' }}>
-              <Book className="w-5 h-5" style={{ color: 'var(--gold-primary)' }} />
+            <div className="p-2" style={{ background: 'var(--kabu-gold-subtle)', borderRadius: 'var(--radius-md)' }}>
+              <Book className="w-5 h-5" style={{ color: 'var(--kabu-gold)' }} />
             </div>
             <h2 style={{ fontFamily: 'var(--font-editorial)', fontSize: '20px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
               Classes Today
             </h2>
           </div>
           <div className="flex items-end gap-2 mt-auto">
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: '36px', fontWeight: 800, color: 'var(--gold-primary)', lineHeight: 1 }}>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: '36px', fontWeight: 800, color: 'var(--kabu-gold)', lineHeight: 1 }}>
               {todaySessions.length}
             </span>
             <span style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
@@ -194,10 +194,10 @@ export default function StudentDashboard() {
           <div
             className="p-6 md:p-8 relative overflow-hidden"
             style={{
-              background: 'var(--crimson)',
+              background: 'var(--kabu-maroon)',
               borderRadius: 'var(--radius-lg)',
-              border: '0.5px solid var(--crimson)',
-              boxShadow: '0 8px 32px rgba(139,26,43,0.3), 0 0 0 0.5px var(--crimson)',
+              border: '0.5px solid var(--kabu-maroon)',
+              boxShadow: '0 8px 32px rgba(139,26,43,0.3), 0 0 0 0.5px var(--kabu-maroon)',
             }}
           >
             <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -267,7 +267,7 @@ export default function StudentDashboard() {
               Recent Activity
             </h3>
             <button
-              style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--gold-primary)', background: 'none', border: 'none', cursor: 'pointer' }}
+              style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--kabu-gold)', background: 'none', border: 'none', cursor: 'pointer' }}
             >
               View All
             </button>
