@@ -14,6 +14,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import {
   Users, CheckCircle, Loader2, Clock, AlertCircle,
   Wifi, WifiOff, RefreshCw, RotateCcw, Download, Bookmark,
+  Shield, MapPin, Globe, Smartphone,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { db, doc, collection, onSnapshot, updateDoc } from '../../lib/firebase';
@@ -249,6 +250,28 @@ export default function LiveSession() {
               >
                 <Bookmark className="w-4 h-4 shrink-0" style={{ color: 'var(--kabu-maroon)' }} />
                 <span>{sessionData.topicOfDay.length > 60 ? sessionData.topicOfDay.slice(0, 60) + '…' : sessionData.topicOfDay}</span>
+              </div>
+            )}
+
+            {/* Security status badges */}
+            {(sessionData.requireGps || sessionData.requireIpRange || sessionData.allowedRadiusMeters) && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-success-container/20 text-success border border-success/30">
+                  <Smartphone className="w-3 h-3" /> Device Bound
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-success-container/20 text-success border border-success/30">
+                  <Shield className="w-3 h-3" /> Token Anti-Replay
+                </span>
+                {sessionData.requireGps && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary-container/30 text-primary border border-primary/30">
+                    <MapPin className="w-3 h-3" /> GPS {sessionData.allowedRadiusMeters || 500}m
+                  </span>
+                )}
+                {sessionData.requireIpRange && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary-container/30 text-primary border border-primary/30">
+                    <Globe className="w-3 h-3" /> IP Range
+                  </span>
+                )}
               </div>
             )}
           </div>
