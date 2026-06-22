@@ -41,7 +41,7 @@ export function TopAppBar({ role, user }: TopAppBarProps) {
           className="w-8 h-8 rounded-lg flex items-center justify-center"
           style={{ background: 'var(--kabu-maroon)' }}
         >
-          <ShieldCheck className="w-4 h-4" style={{ width: 18, height: 18, color: 'var(--text-on-maroon)' }} />
+          <ShieldCheck className="w-4 h-4" style={{ width: 18, height: 18, color: 'var(--text-inverse)' }} />
         </div>
         <span className="text-base font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>KSAS</span>
       </div>
@@ -59,7 +59,7 @@ export function TopAppBar({ role, user }: TopAppBarProps) {
         >
           <Bell className="w-5 h-5" />
           {hasNotifs && (
-            <span className="absolute top-2 right-2 w-2 h-2 rounded-full" style={{ background: 'var(--danger)', boxShadow: '0 0 0 2px var(--bg-surface)' }} />
+            <span className="absolute top-2 right-2 w-2 h-2 rounded-full" style={{ background: 'var(--danger)', boxShadow: '0 0 0 2px var(--bg-void)' }} />
           )}
         </button>
 
@@ -85,9 +85,8 @@ export function TopAppBar({ role, user }: TopAppBarProps) {
             <div
               className="w-8 h-8 rounded-full font-bold text-xs flex items-center justify-center"
               style={{
-                background: 'var(--kabu-gold)',
+                background: 'var(--kabu-maroon)',
                 color: 'var(--text-inverse)',
-                border: '2px solid var(--kabu-gold-dark)',
               }}
             >
               {getInitials(user?.name)}
@@ -98,13 +97,13 @@ export function TopAppBar({ role, user }: TopAppBarProps) {
             <div
               className="absolute right-0 top-12 w-56 overflow-hidden z-50 animate-scale-in"
               style={{
-                background: 'var(--bg-surface)',
+                background: 'var(--bg-void)',
                 borderRadius: 'var(--radius-xl)',
-                border: '0.5px solid var(--bg-border)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 0 0.5px var(--bg-border)',
+                border: '1px solid var(--bg-border)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)',
               }}
             >
-              <div className="px-4 py-3.5" style={{ borderBottom: '0.5px solid var(--bg-border)', background: 'var(--bg-elevated)' }}>
+              <div className="px-4 py-3.5" style={{ borderBottom: '1px solid var(--bg-border)', background: 'var(--bg-elevated)' }}>
                 <p className="font-bold text-sm truncate" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}>{user?.name || 'User'}</p>
                 <p className="text-xs capitalize mt-0.5" style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>{ROLE_LABELS[role]}</p>
               </div>

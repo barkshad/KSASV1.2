@@ -11,7 +11,7 @@ export default function RiskMonitor() {
   const { data: allUsers } = useFirestoreRealtimeCollection(collections.USERS);
   const { data: enrollments } = useFirestoreRealtimeCollection(collections.ENROLLMENTS);
 
-  const [attendanceData, setAttendanceData] = useState<Record<string, { present: number; total: number }>>({});
+  const [attendanceData, setAttendanceData] = useState<Record<string, { present: number; total: number; early: number; earlyPresent: number; late: number; latePresent: number }>>({});
   const [loading, setLoading] = useState(true);
 
   const lecturerCourses = useMemo(() => {
@@ -32,20 +32,30 @@ export default function RiskMonitor() {
     }
 
     const fetchAllAttendance = async () => {
-      const map: Record<string, { present: number; total: number }> = {};
+      const map: Record<string, { present: number; total: number; early: number; earlyPresent: number; late: number; latePresent: number }> = {};
 
       for (const code of lecturerCourses) {
-        const courseSessions = allSessions.filter(s => s.courseCode === code);
-        for (const session of courseSessions) {
+        const courseSessions = allSessions.filter(s => s.courseCode === code).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+        const midIdx = Math.floor(courseSessions.length / 2);
+
+        for (let i = 0; i < courseSessions.length; i++) {
+          const session = courseSessions[i];
+          const isEarlyHalf = i < midIdx;
           try {
             const attSnap = await getDocs(collection(db, `${collections.SESSIONS}/${session.id}/attendance`));
             attSnap.forEach(d => {
               const data = d.data();
               const sid = data.studentId;
-              if (!map[sid]) map[sid] = { present: 0, total: 0 };
+              if (!map[sid]) map[sid] = { present: 0, total: 0, early: 0, earlyPresent: 0, late: 0, latePresent: 0 };
               map[sid].total++;
-              if (data.status === 'present' || data.status === 'late') {
-                map[sid].present++;
+              const attended = data.status === 'present' || data.status === 'late';
+              if (attended) map[sid].present++;
+              if (isEarlyHalf) {
+                map[sid].early++;
+                if (attended) map[sid].earlyPresent++;
+              } else {
+                map[sid].late++;
+                if (attended) map[sid].latePresent++;
               }
             });
           } catch (e) {
@@ -74,13 +84,16 @@ export default function RiskMonitor() {
       const pct = att.total > 0 ? Math.round((att.present / att.total) * 100) : 100;
       if (pct < 75) {
         const student = allUsers.find(u => u.uid === sid);
+        const earlyRate = att.early > 0 ? Math.round((att.earlyPresent / att.early) * 100) : 0;
+        const lateRate = att.late > 0 ? Math.round((att.latePresent / att.late) * 100) : 0;
+        const trend = att.early > 0 && att.late > 0 ? lateRate - earlyRate : 0;
         result.push({
           id: sid,
           name: student?.name || 'Unknown',
           reg: sid,
-          program: enrollment.program || 'BSc Program',
+          program: enrollment.program || '',
           attendance: pct,
-          trend: -5,
+          trend,
         });
       }
     }
@@ -153,9 +166,9 @@ export default function RiskMonitor() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-on-surface-variant font-body-sm">{student.reg}</span>
-                  <div className="flex items-center gap-1 text-error">
-                    <TrendingDown className="w-4 h-4" />
-                    <span className="text-xs font-bold">{student.trend}%</span>
+                  <div className={`flex items-center gap-1 ${student.trend < 0 ? 'text-error' : student.trend > 0 ? 'text-success' : 'text-on-surface-variant'}`}>
+                    {student.trend < 0 ? <TrendingDown className="w-4 h-4" /> : null}
+                    <span className="text-xs font-bold">{student.trend > 0 ? '+' : ''}{student.trend}%</span>
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
@@ -218,9 +231,9 @@ export default function RiskMonitor() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-1 text-error">
-                        <TrendingDown className="w-4 h-4" />
-                        <span className="text-xs font-bold">{student.trend}% vs last month</span>
+                      <div className={`flex items-center gap-1 ${student.trend < 0 ? 'text-error' : student.trend > 0 ? 'text-success' : 'text-on-surface-variant'}`}>
+                        {student.trend < 0 ? <TrendingDown className="w-4 h-4" /> : null}
+                        <span className="text-xs font-bold">{student.trend > 0 ? '+' : ''}{student.trend}%</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">

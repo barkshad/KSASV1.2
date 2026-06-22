@@ -1,5 +1,6 @@
 import { db, collection, doc, setDoc, getDocs, getDoc, updateDoc, runTransaction, serverTimestamp, query, where } from './firebase';
 import { uploadJSONToCloudinary, fetchJSONFromCloudinary } from './cloudinary';
+import { validateCheckIn, CheckInSecurityContext, SessionSecurityConfig } from './security';
 
 export const collections = {
   USERS: 'users',
@@ -24,7 +25,13 @@ export async function logAudit(user: any, actionType: string, entity: string, de
   });
 }
 
-export async function checkInStudent(sessionId: string, studentData: any, token: string, deviceFingerprint: string) {
+export async function checkInStudent(
+  sessionId: string,
+  studentData: any,
+  token: string,
+  deviceFingerprint: string,
+  securityContext?: CheckInSecurityContext
+) {
   const sessionDocRef = doc(db, collections.SESSIONS, sessionId);
   const sessionDoc = await getDoc(sessionDocRef);
 
@@ -34,11 +41,26 @@ export async function checkInStudent(sessionId: string, studentData: any, token:
   if (sessionData.status !== 'open') throw new Error('Session is closed');
 
   // Use the uid field from the user object (the original student ID like KAB/101/2023)
-  // stored in the 'uid' field of the user document
   const studentId = studentData.uid || studentData.id;
   const studentName = studentData.name || 'Unknown Student';
 
   if (!studentId) throw new Error('Student ID not found. Please log out and log in again.');
+
+  // ── Security validation (5 layers) ──────────────────────────────────────
+  const ctx: CheckInSecurityContext = securityContext || { deviceFingerprint };
+  const sessionConfig: Partial<SessionSecurityConfig> = {
+    campusLat: sessionData.campusLat,
+    campusLng: sessionData.campusLng,
+    allowedRadiusMeters: sessionData.allowedRadiusMeters,
+    allowedIpPrefixes: sessionData.allowedIpPrefixes,
+    requireGps: sessionData.requireGps || false,
+    requireIpRange: sessionData.requireIpRange || false,
+  };
+
+  const securityResult = await validateCheckIn(sessionId, studentId, token, ctx, sessionConfig);
+  if (!securityResult.allowed) {
+    throw new Error(securityResult.error || 'Security validation failed');
+  }
 
   // Use studentId as the document key (sanitize slashes)
   const attendanceDocId = studentId.replace(/\//g, '_').replace(/\s+/g, '_');
@@ -89,10 +111,12 @@ export async function archiveSession(sessionId: string, csvData?: string) {
 
   const attendanceList = attendanceSnapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
-  const present = attendanceList.filter((a: any) => a.status === 'present' || a.status === 'late').length;
-  const absent = Math.max(0, (sessionData.enrolledCount || 0) - present);
+  const present = attendanceList.filter((a: any) => a.status === 'present').length;
+  const late = attendanceList.filter((a: any) => a.status === 'late').length;
+  const attended = present + late;
+  const absent = Math.max(0, (sessionData.enrolledCount || 0) - attended);
   const attendanceRate = (sessionData.enrolledCount || 0) > 0
-    ? Math.round((present / (sessionData.enrolledCount || 1)) * 1000) / 10
+    ? Math.round((attended / (sessionData.enrolledCount || 1)) * 1000) / 10
     : 0;
 
   // Save individual session archive
@@ -128,6 +152,7 @@ export async function archiveSession(sessionId: string, csvData?: string) {
     topicOfDay: sessionData.topicOfDay || '',
     totalStudents: sessionData.enrolledCount || 0,
     present,
+    late,
     absent,
     attendanceRate,
     csvFileName,

@@ -8,7 +8,7 @@ export default function NotFound() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: 'var(--bg-base)' }}>
       <div className="text-center max-w-md animate-fade-in">
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '120px', lineHeight: 1, fontWeight: 900, color: 'var(--kabu-gold)', opacity: 0.2 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '120px', lineHeight: 1, fontWeight: 900, color: 'var(--kabu-maroon)', opacity: 0.15 }}>
           404
         </h1>
         <div className="mt-4">

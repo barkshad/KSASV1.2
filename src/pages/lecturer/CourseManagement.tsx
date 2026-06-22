@@ -28,16 +28,16 @@ export default function CourseManagement() {
       const enrolledCount = courseEnrollments.length;
 
       let totalPresent = 0;
-      let totalAttendanceRecords = 0;
+      let totalEnrolled = 0;
 
       for (const session of courseSessions) {
-        // we approximate attendance rate from the session's attendance count
-        // real calculation would need to query each attendance subcollection
-        totalAttendanceRecords += enrolledCount; // each session could have up to enrolledCount students
-        totalPresent += enrolledCount; // simplified average
+        const sessionEnrolled = session.enrolledCount || enrolledCount;
+        const sessionPresent = session.attendanceCount || 0;
+        totalEnrolled += sessionEnrolled;
+        totalPresent += sessionPresent;
       }
 
-      const compliance = totalAttendanceRecords > 0 ? 90 : 0; // placeholder for actual calculation
+      const compliance = totalEnrolled > 0 ? Math.round((totalPresent / totalEnrolled) * 100) : 0;
 
       const nextSession = todaySessions.find(s => s.status === 'open' || s.status === 'scheduled') || todaySessions[0];
 

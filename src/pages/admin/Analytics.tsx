@@ -206,7 +206,7 @@ export default function Analytics() {
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--kabu-gold)' }} />
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--kabu-maroon)' }} />
         </div>
       ) : sessions.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-tertiary)' }}>
@@ -257,10 +257,10 @@ export default function Analytics() {
                   <Line
                     type="monotone"
                     dataKey="rate"
-                    stroke="var(--kabu-gold)"
+                    stroke="var(--kabu-maroon)"
                     strokeWidth={2}
-                    dot={{ fill: 'var(--kabu-gold)', r: 3, strokeWidth: 0 }}
-                    activeDot={{ r: 5, fill: 'var(--kabu-gold)', strokeWidth: 0 }}
+                    dot={{ fill: 'var(--kabu-maroon)', r: 3, strokeWidth: 0 }}
+                    activeDot={{ r: 5, fill: 'var(--kabu-maroon)', strokeWidth: 0 }}
                   />
                 </LineChart>
               </ResponsiveContainer>

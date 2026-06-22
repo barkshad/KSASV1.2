@@ -45,11 +45,27 @@ export default function LecturerDashboard() {
     return () => unsubscribe();
   }, [activeSession?.id]);
 
-  const handleStartSession = async (courseCode: string, courseName: string, room: string, topicOfDay: string = '') => {
+  const handleStartSession = async (courseCode: string, courseName: string, room: string, topicOfDay: string = '', securityConfig?: {
+    requireGps?: boolean;
+    requireIpRange?: boolean;
+    campusLat?: number;
+    campusLng?: number;
+    allowedRadiusMeters?: number;
+  }) => {
     setStarting(true);
     try {
       const secret = generateSessionTOTPSecret();
       const dateStr = new Date().toISOString().split('T')[0];
+
+      let enrolledCount = 0;
+      try {
+        const enrollQ = query(collection(db, collections.ENROLLMENTS), where('courseCode', '==', courseCode));
+        const enrollSnap = await getDocs(enrollQ);
+        enrolledCount = enrollSnap.size;
+      } catch {
+        enrolledCount = 0;
+      }
+
       const newSessionRef = await addDoc(collection(db, collections.SESSIONS), {
         courseCode,
         courseName,
@@ -62,9 +78,15 @@ export default function LecturerDashboard() {
         windowMinutes: 15,
         status: 'open',
         totpSecret: secret,
-        enrolledCount: 50,
+        enrolledCount,
         createdAt: serverTimestamp(),
-        topicOfDay
+        topicOfDay,
+        // Security config
+        requireGps: securityConfig?.requireGps || false,
+        requireIpRange: securityConfig?.requireIpRange || false,
+        campusLat: securityConfig?.campusLat,
+        campusLng: securityConfig?.campusLng,
+        allowedRadiusMeters: securityConfig?.allowedRadiusMeters || 500,
       });
 
       navigate(`/lecturer/live?sessionId=${newSessionRef.id}`);
@@ -122,12 +144,12 @@ export default function LecturerDashboard() {
   if (loadingSessions) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--kabu-gold)' }} />
+        <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--kabu-maroon)' }} />
       </div>
     );
   }
 
-  const enrolledCount = activeSession?.enrolledCount || 50;
+  const enrolledCount = activeSession?.enrolledCount || 0;
   const attendancePct = Math.min(100, Math.round((attendanceCount / enrolledCount) * 100));
 
   const weeklyTrend = useMemo(() => {
@@ -270,11 +292,19 @@ export default function LecturerDashboard() {
                 onSubmit={(e) => {
                   e.preventDefault();
                   const fd = new FormData(e.currentTarget);
+                  const securityConfig = {
+                    requireGps: fd.get('requireGps') === 'on',
+                    requireIpRange: fd.get('requireIpRange') === 'on',
+                    campusLat: fd.get('campusLat') ? parseFloat(fd.get('campusLat') as string) : undefined,
+                    campusLng: fd.get('campusLng') ? parseFloat(fd.get('campusLng') as string) : undefined,
+                    allowedRadiusMeters: fd.get('allowedRadiusMeters') ? parseInt(fd.get('allowedRadiusMeters') as string) : 500,
+                  };
                   handleStartSession(
                     fd.get('code') as string,
                     fd.get('name') as string,
                     fd.get('room') as string,
-                    (fd.get('topic') as string) || ''
+                    (fd.get('topic') as string) || '',
+                    securityConfig
                   );
                 }}
                 className="space-y-4"
@@ -293,7 +323,7 @@ export default function LecturerDashboard() {
                     <label className="form-label">Course Name</label>
                     <input name="name" required placeholder="e.g. Data Structures & Algorithms" className="input-base" />
                   </div>
-                  <div className="form-group">
+                   <div className="form-group">
                     <label className="font-label-md uppercase tracking-widest" style={{ color: 'var(--color-text-tertiary)' }}>Topic of Day</label>
                     <input
                       name="topic"
@@ -319,6 +349,97 @@ export default function LecturerDashboard() {
                       }}
                     />
                     <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: '11px', color: 'var(--text-tertiary)', textAlign: 'right', marginTop: '4px' }}>0 / 120</div>
+                  </div>
+
+                  {/* Security Settings */}
+                  <div className="p-4 rounded-xl" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--bg-border)' }}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <svg className="w-4 h-4" style={{ color: 'var(--gold-primary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                      </svg>
+                      <span className="font-label-md" style={{ color: 'var(--text-secondary)' }}>Anti-Fraud Security</span>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <label className="flex items-center justify-between cursor-pointer">
+                        <span className="text-sm" style={{ color: 'var(--text-primary)' }}>GPS Proximity Check</span>
+                        <input type="checkbox" name="requireGps" className="w-4 h-4 accent-[var(--gold-primary)]" />
+                      </label>
+                      
+                      <label className="flex items-center justify-between cursor-pointer">
+                        <span className="text-sm" style={{ color: 'var(--text-primary)' }}>IP Range Validation</span>
+                        <input type="checkbox" name="requireIpRange" className="w-4 h-4 accent-[var(--gold-primary)]" />
+                      </label>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Campus Latitude</label>
+                          <input
+                            name="campusLat"
+                            type="number"
+                            step="any"
+                            placeholder="-0.3031"
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '12px',
+                              background: 'var(--bg-surface)',
+                              border: '0.5px solid var(--bg-border)',
+                              borderRadius: 'var(--radius-sm)',
+                              padding: '6px 8px',
+                              width: '100%',
+                              color: 'var(--text-primary)',
+                              outline: 'none',
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Campus Longitude</label>
+                          <input
+                            name="campusLng"
+                            type="number"
+                            step="any"
+                            placeholder="35.9403"
+                            style={{
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '12px',
+                              background: 'var(--bg-surface)',
+                              border: '0.5px solid var(--bg-border)',
+                              borderRadius: 'var(--radius-sm)',
+                              padding: '6px 8px',
+                              width: '100%',
+                              color: 'var(--text-primary)',
+                              outline: 'none',
+                            }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <label className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Allowed Radius (meters)</label>
+                        <input
+                          name="allowedRadiusMeters"
+                          type="number"
+                          min="50"
+                          max="2000"
+                          defaultValue="500"
+                          style={{
+                            fontFamily: 'var(--font-mono)',
+                            fontSize: '12px',
+                            background: 'var(--bg-surface)',
+                            border: '0.5px solid var(--bg-border)',
+                            borderRadius: 'var(--radius-sm)',
+                            padding: '6px 8px',
+                            width: '100%',
+                            color: 'var(--text-primary)',
+                            outline: 'none',
+                          }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <p className="mt-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                      Device binding + token consumption are always enabled. GPS and IP checks are optional.
+                    </p>
                   </div>
                   <button
                     type="submit"
@@ -357,7 +478,7 @@ export default function LecturerDashboard() {
           </h3>
           <div className="grid grid-cols-2 gap-3 flex-1">
             {[
-              { icon: AlertCircle, label: 'Notify Absentees', bg: 'var(--kabu-gold-subtle)', color: 'var(--kabu-gold)' },
+              { icon: AlertCircle, label: 'Notify Absentees', bg: 'var(--kabu-maroon-tint)', color: 'var(--kabu-maroon)' },
               { icon: FileBarChart, label: 'Generate Report', bg: 'var(--bg-elevated)', color: 'var(--text-secondary)' },
               { icon: Calendar, label: 'Schedule', bg: 'var(--success-bg)', color: 'var(--success)' },
               { icon: AlertCircle, label: 'Risk Monitor', bg: 'var(--danger-bg)', color: 'var(--danger)' },
@@ -412,7 +533,7 @@ export default function LecturerDashboard() {
                     maxWidth: '48px',
                     height: `${Math.max(pct, 4)}%`,
                     minHeight: '8px',
-                    background: 'var(--kabu-gold)',
+                    background: 'var(--kabu-maroon)',
                     opacity: 0.3,
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
@@ -768,7 +889,7 @@ function AnalyticsSection({ sessions, userId }: { sessions: any[]; userId?: stri
         </h4>
         {loadingFeedback ? (
           <div className="flex justify-center py-8">
-            <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--gold-primary)' }} />
+            <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--kabu-maroon)' }} />
           </div>
         ) : feedbackList.length === 0 ? (
           <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-tertiary)', textAlign: 'center', padding: '24px 0' }}>
@@ -802,8 +923,8 @@ function AnalyticsSection({ sessions, userId }: { sessions: any[]; userId?: stri
                         key={n}
                         className="w-3.5 h-3.5"
                         style={{
-                          fill: n <= (fb.rating || 0) ? 'var(--gold-primary)' : 'none',
-                          color: n <= (fb.rating || 0) ? 'var(--gold-primary)' : 'var(--text-tertiary)',
+                          fill: n <= (fb.rating || 0) ? 'var(--kabu-maroon)' : 'none',
+                          color: n <= (fb.rating || 0) ? 'var(--kabu-maroon)' : 'var(--text-tertiary)',
                         }}
                       />
                     ))}

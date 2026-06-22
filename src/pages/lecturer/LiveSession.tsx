@@ -232,14 +232,14 @@ export default function LiveSession() {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
-                  background: 'var(--kabu-gold-subtle)',
-                  border: '0.5px solid var(--kabu-gold-dark)',
+                  background: 'var(--kabu-maroon-tint)',
+                  border: '1px solid var(--bg-border)',
                   borderRadius: 'var(--radius-sm)',
                   padding: '4px 10px',
                   fontFamily: 'Outfit, sans-serif',
                   fontSize: '12px',
                   fontWeight: 400,
-                  color: 'var(--kabu-gold)',
+                  color: 'var(--kabu-maroon)',
                   marginTop: '8px',
                   maxWidth: '420px',
                   overflow: 'hidden',
@@ -247,7 +247,7 @@ export default function LiveSession() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                <Bookmark className="w-4 h-4 shrink-0" style={{ color: 'var(--kabu-gold)' }} />
+                <Bookmark className="w-4 h-4 shrink-0" style={{ color: 'var(--kabu-maroon)' }} />
                 <span>{sessionData.topicOfDay.length > 60 ? sessionData.topicOfDay.slice(0, 60) + '…' : sessionData.topicOfDay}</span>
               </div>
             )}

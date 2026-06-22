@@ -25,8 +25,6 @@ export async function seedAdminIfNotExists() {
         status: 'active',
         createdAt: serverTimestamp(),
       });
-    } else {
-      await setDoc(adminSnap.docs[0].ref, { password: ADMIN_PW_HASH }, { merge: true });
     }
   } catch (err) {
     console.warn('[KSAS] Seed operation encountered an issue.');

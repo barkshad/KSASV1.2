@@ -100,7 +100,7 @@ export default function StudentDashboard() {
   if (loadingEnrollments || loadingSessions || loadingAttendance) {
       return (
         <div className="flex h-screen items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--kabu-gold)' }} />
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--kabu-maroon)' }} />
         </div>
       );
   }
@@ -172,15 +172,15 @@ export default function StudentDashboard() {
           }}
         >
           <div className="flex items-center gap-2 mb-2">
-            <div className="p-2" style={{ background: 'var(--kabu-gold-subtle)', borderRadius: 'var(--radius-md)' }}>
-              <Book className="w-5 h-5" style={{ color: 'var(--kabu-gold)' }} />
+            <div className="p-2" style={{ background: 'var(--kabu-maroon-tint)', borderRadius: 'var(--radius-md)' }}>
+              <Book className="w-5 h-5" style={{ color: 'var(--kabu-maroon)' }} />
             </div>
             <h2 style={{ fontFamily: 'var(--font-editorial)', fontSize: '20px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
               Classes Today
             </h2>
           </div>
           <div className="flex items-end gap-2 mt-auto">
-            <span style={{ fontFamily: 'var(--font-display)', fontSize: '36px', fontWeight: 800, color: 'var(--kabu-gold)', lineHeight: 1 }}>
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: '36px', fontWeight: 800, color: 'var(--kabu-maroon)', lineHeight: 1 }}>
               {todaySessions.length}
             </span>
             <span style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
@@ -303,7 +303,7 @@ export default function StudentDashboard() {
               Recent Activity
             </h3>
             <button
-              style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--kabu-gold)', background: 'none', border: 'none', cursor: 'pointer' }}
+              style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--kabu-maroon)', background: 'none', border: 'none', cursor: 'pointer' }}
             >
               View All
             </button>
@@ -437,8 +437,8 @@ export default function StudentDashboard() {
                     <Star
                       className="w-6 h-6"
                       style={{
-                        fill: n <= feedbackRating ? 'var(--gold-primary)' : 'none',
-                        color: n <= feedbackRating ? 'var(--gold-primary)' : 'var(--text-tertiary)',
+                        fill: n <= feedbackRating ? 'var(--kabu-maroon)' : 'none',
+                        color: n <= feedbackRating ? 'var(--kabu-maroon)' : 'var(--text-tertiary)',
                         transition: 'fill 120ms ease, color 120ms ease',
                       }}
                     />

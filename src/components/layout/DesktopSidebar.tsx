@@ -20,9 +20,8 @@ export function AvatarCircle({ name, size = 'md' }: { name: string; size?: 'sm' 
     <div
       className={`${sizeClass} rounded-full font-bold flex items-center justify-center shrink-0`}
       style={{
-        background: 'var(--kabu-gold)',
+        background: 'var(--kabu-maroon)',
         color: 'var(--text-inverse)',
-        border: '2px solid var(--kabu-gold-dark)',
       }}
     >
       {initials}
@@ -72,12 +71,12 @@ export function DesktopSidebar({ role, user }: DesktopSidebarProps) {
   return (
     <aside className="sidebar">
       {/* Brand Header */}
-      <div className="flex items-center gap-3 px-5 py-5 shrink-0" style={{ borderBottom: '0.5px solid var(--bg-border)' }}>
+      <div className="flex items-center gap-3 px-5 py-5 shrink-0" style={{ borderBottom: '1px solid var(--bg-border)' }}>
         <div
           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
           style={{ background: 'var(--kabu-maroon)' }}
         >
-          <ShieldCheck className="w-5 h-5" style={{ color: 'var(--text-on-maroon)' }} />
+          <ShieldCheck className="w-5 h-5" style={{ color: 'var(--text-inverse)' }} />
         </div>
         <div>
           <span className="text-lg font-bold tracking-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>KSAS</span>
@@ -93,7 +92,7 @@ export function DesktopSidebar({ role, user }: DesktopSidebarProps) {
         className="flex items-center gap-3 p-4 mx-3 mt-3 transition-colors group text-left"
         style={{
           borderRadius: 'var(--radius-lg)',
-          border: '0.5px solid transparent',
+          border: '1px solid transparent',
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = 'var(--bg-elevated)';
@@ -107,7 +106,7 @@ export function DesktopSidebar({ role, user }: DesktopSidebarProps) {
         <AvatarCircle name={user.name} />
         <div className="min-w-0 flex-1">
           <p className="font-bold text-sm truncate leading-tight" style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}>{user.name}</p>
-          <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)', fontSize: '10px' }}>{displayId}</p>
+          <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-mono)', fontSize: '10px' }}>{displayId}</p>
           <span className="badge badge-primary mt-1">{ROLE_LABELS[role]}</span>
         </div>
       </button>
@@ -115,7 +114,7 @@ export function DesktopSidebar({ role, user }: DesktopSidebarProps) {
       <div className="mx-5 my-2" style={{ height: '1px', background: 'var(--bg-border)' }} />
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-1 space-y-0.5 overflow-y-auto custom-scrollbar">
+      <nav className="flex-1 px-1 py-1 space-y-0.5 overflow-y-auto custom-scrollbar">
         {links.map(({ to, icon: Icon, label, end }) => (
           <NavLink
             key={to}
@@ -133,7 +132,7 @@ export function DesktopSidebar({ role, user }: DesktopSidebarProps) {
       </nav>
 
       {/* Logout */}
-      <div className="px-3 pb-5 pt-2 shrink-0" style={{ borderTop: '0.5px solid var(--bg-border)' }}>
+      <div className="px-3 pb-5 pt-2 shrink-0" style={{ borderTop: '1px solid var(--bg-border)' }}>
         <button
           onClick={logout}
           className="w-full flex items-center gap-3 px-4 py-3 transition-colors group"

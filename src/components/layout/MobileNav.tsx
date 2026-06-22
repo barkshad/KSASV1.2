@@ -60,20 +60,20 @@ export function MobileNav({ role }: MobileNavProps) {
                 <div
                   className="relative flex items-center justify-center transition-all duration-200"
                   style={{
-                    borderRadius: highlight ? 'var(--radius-md)' : 'var(--radius-md)',
+                    borderRadius: 'var(--radius-md)',
                     width: highlight ? '48px' : '32px',
-                    height: highlight ? '32px' : '32px',
+                    height: '32px',
                     background: highlight
                       ? isActive
-                        ? 'var(--kabu-gold)'
-                        : 'var(--kabu-gold-subtle)'
+                        ? 'var(--kabu-maroon)'
+                        : 'var(--kabu-maroon-tint)'
                       : isActive
-                        ? 'var(--kabu-gold-glow)'
+                        ? 'var(--kabu-maroon-tint)'
                         : 'transparent',
                   }}
                 >
                   <Icon
-                    style={{ width: 20, height: 20, color: highlight ? (isActive ? 'var(--text-inverse)' : 'var(--kabu-gold)') : (isActive ? 'var(--kabu-gold)' : 'var(--text-tertiary)') }}
+                    style={{ width: 20, height: 20, color: highlight ? (isActive ? 'var(--text-inverse)' : 'var(--kabu-maroon)') : (isActive ? 'var(--kabu-maroon)' : 'var(--text-tertiary)') }}
                   />
                 </div>
                 <span
@@ -81,7 +81,7 @@ export function MobileNav({ role }: MobileNavProps) {
                   style={{
                     fontFamily: 'var(--font-body)',
                     fontWeight: 500,
-                    color: isActive ? 'var(--kabu-gold)' : 'var(--text-tertiary)',
+                    color: isActive ? 'var(--kabu-maroon)' : 'var(--text-tertiary)',
                   }}
                 >
                   {label}

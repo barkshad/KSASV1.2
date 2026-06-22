@@ -51,10 +51,10 @@ export default function AdminDashboard() {
       {/* Stat Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         {[
-          { label: 'Total Students', value: totalStudents, color: 'var(--kabu-gold)' },
-          { label: 'Total Lecturers', value: totalLecturers, color: 'var(--kabu-gold)' },
-          { label: 'Active Courses', value: courses.length, color: 'var(--kabu-gold)' },
-          { label: 'Live Sessions', value: activeSessions, color: activeSessions > 0 ? 'var(--success)' : 'var(--kabu-gold)' },
+          { label: 'Total Students', value: totalStudents, color: 'var(--kabu-maroon)' },
+          { label: 'Total Lecturers', value: totalLecturers, color: 'var(--kabu-maroon)' },
+          { label: 'Active Courses', value: courses.length, color: 'var(--kabu-maroon)' },
+          { label: 'Live Sessions', value: activeSessions, color: activeSessions > 0 ? 'var(--success)' : 'var(--kabu-maroon)' },
         ].map((stat) => (
           <div
             key={stat.label}
@@ -121,7 +121,7 @@ export default function AdminDashboard() {
                   borderRadius: 'var(--radius-md)',
                 }}
               >
-                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '24px', fontWeight: 500, color: item.color || 'var(--kabu-gold)' }}>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '24px', fontWeight: 500, color: item.color || 'var(--kabu-maroon)' }}>
                   {item.value}
                 </p>
                 <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginTop: '4px' }}>
@@ -186,7 +186,7 @@ export default function AdminDashboard() {
             onClick={() => navigate('/admin/users')}
             className="mt-6 w-full py-2.5 font-bold text-xs uppercase tracking-wider transition-all z-10 relative"
             style={{
-              background: 'var(--kabu-gold)',
+              background: 'var(--kabu-maroon)',
               color: 'var(--text-inverse)',
               borderRadius: 'var(--radius-md)',
               border: 'none',
@@ -217,10 +217,10 @@ export default function AdminDashboard() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--kabu-gold)' }} />
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--kabu-maroon)' }} />
                 <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-secondary)' }}>Student-to-Lecturer Ratio</span>
               </div>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 500, color: 'var(--kabu-gold)' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 500, color: 'var(--kabu-maroon)' }}>
                 {totalLecturers > 0 ? (totalStudents / totalLecturers).toFixed(1) : '--'}:1
               </span>
             </div>
@@ -229,7 +229,7 @@ export default function AdminDashboard() {
                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)' }} />
                 <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-secondary)' }}>Avg Sessions/Course</span>
               </div>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 500, color: 'var(--kabu-gold)' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 500, color: 'var(--kabu-maroon)' }}>
                 {courses.length > 0 ? (sessions.length / courses.length).toFixed(1) : '--'}
               </span>
             </div>
@@ -253,14 +253,14 @@ export default function AdminDashboard() {
               onClick={() => navigate('/admin/users')}
               className="flex flex-col items-center justify-center p-4 transition-colors"
               style={{
-                background: 'var(--kabu-gold-subtle)',
-                border: '0.5px solid var(--kabu-gold-dark)',
+                background: 'var(--kabu-maroon-tint)',
+                border: '1px solid var(--kabu-maroon-subtle)',
                 borderRadius: 'var(--radius-md)',
                 cursor: 'pointer',
               }}
             >
-              <UserPlus className="w-6 h-6 mb-2" style={{ color: 'var(--kabu-gold)' }} />
-              <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--kabu-gold)', textAlign: 'center' }}>
+              <UserPlus className="w-6 h-6 mb-2" style={{ color: 'var(--kabu-maroon)' }} />
+              <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--kabu-maroon)', textAlign: 'center' }}>
                 Create User
               </span>
             </button>
@@ -290,7 +290,7 @@ export default function AdminDashboard() {
         </h3>
         {loadingFeedback ? (
           <div className="flex justify-center py-8">
-            <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'var(--gold-primary)' }} />
+            <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'var(--kabu-maroon)' }} />
           </div>
         ) : recentFeedback.length === 0 ? (
           <div
@@ -333,8 +333,8 @@ export default function AdminDashboard() {
                       key={n}
                       className="w-3.5 h-3.5"
                       style={{
-                        fill: n <= (fb.rating || 0) ? 'var(--gold-primary)' : 'none',
-                        color: n <= (fb.rating || 0) ? 'var(--gold-primary)' : 'var(--text-tertiary)',
+                        fill: n <= (fb.rating || 0) ? 'var(--kabu-maroon)' : 'none',
+                        color: n <= (fb.rating || 0) ? 'var(--kabu-maroon)' : 'var(--text-tertiary)',
                       }}
                     />
                   ))}

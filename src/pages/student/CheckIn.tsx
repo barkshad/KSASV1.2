@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { QrCode, CheckCircle, Loader2, School, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { QrCode, CheckCircle, Loader2, School, AlertCircle, MapPin, Wifi } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Scanner } from '@yudiel/react-qr-scanner';
 import { useAuth } from '../../hooks/useAuth';
 import { checkInStudent } from '../../lib/db';
+import { CheckInSecurityContext } from '../../lib/security';
 import { validateTOTP } from '../../lib/totp';
 import { db, doc, getDoc } from '../../lib/firebase';
 import { collections } from '../../lib/db';
@@ -16,19 +17,56 @@ export default function CheckIn() {
   const [manualCode, setManualCode] = useState('');
   const [showScanner, setShowScanner] = useState(false);
   const [checkedInSession, setCheckedInSession] = useState<any>(null);
+  const [securityWarnings, setSecurityWarnings] = useState<string[]>([]);
 
   const navigate = useNavigate();
   const { user } = useAuth();
 
   // Stable device fingerprint
   const deviceFingerprint = btoa(
-    (navigator.userAgent + (window.screen?.width ?? 0)).substring(0, 64)
-  ).substring(0, 16);
+    (navigator.userAgent + (window.screen?.width ?? 0) + (window.screen?.height ?? 0)).substring(0, 128)
+  ).substring(0, 24);
+
+  // Get GPS coordinates
+  const getCoordinates = (): Promise<{ lat: number | null; lng: number | null }> => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve({ lat: null, lng: null });
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        () => {
+          // Permission denied or error — proceed without GPS
+          resolve({ lat: null, lng: null });
+        },
+        { timeout: 5000, maximumAge: 60000 }
+      );
+    });
+  };
+
+  // Get IP address (uses public API)
+  const getIpAddress = async (): Promise<string | undefined> => {
+    try {
+      const res = await fetch('https://api.ipify.org?format=json', { signal: AbortSignal.timeout(3000) });
+      const data = await res.json();
+      return data.ip;
+    } catch {
+      return undefined;
+    }
+  };
 
   const processQrData = async (qrData: string) => {
     setShowScanner(false);
     setLoading(true);
     setError(null);
+    setSecurityWarnings([]);
     try {
       if (!qrData.startsWith('ksas://attend')) {
         throw new Error('Invalid QR code. Please scan the classroom QR code.');
@@ -55,8 +93,21 @@ export default function CheckIn() {
         throw new Error('QR code has expired. Please ask your lecturer to refresh the QR code and try again.');
       }
 
-      // 3. Write Attendance - pass the full user object
-      await checkInStudent(sessionId, user, token, deviceFingerprint);
+      // 3. Collect security context (GPS + IP in parallel)
+      const [coordinates, ipAddress] = await Promise.all([
+        getCoordinates(),
+        getIpAddress(),
+      ]);
+
+      const securityContext: CheckInSecurityContext = {
+        deviceFingerprint,
+        latitude: coordinates.lat,
+        longitude: coordinates.lng,
+        ipAddress,
+      };
+
+      // 4. Write Attendance with security validation
+      await checkInStudent(sessionId, user, token, deviceFingerprint, securityContext);
 
       setCheckedInSession(sessionData);
       setScanned(true);
@@ -96,6 +147,17 @@ export default function CheckIn() {
           </div>
         )}
 
+        {securityWarnings.length > 0 && (
+          <div className="w-full bg-warning-bg rounded-xl px-4 py-3 mb-4 flex items-start gap-3 text-xs" style={{ color: 'var(--warning)', border: '1px solid rgba(184,134,11,0.3)' }}>
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div>
+              {securityWarnings.map((w, i) => (
+                <p key={i}>{w}</p>
+              ))}
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className="w-full bg-error-container text-on-error-container p-4 rounded-xl mb-4 text-sm font-medium text-center flex items-center justify-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -107,6 +169,11 @@ export default function CheckIn() {
           <div className="flex flex-col items-center gap-3 py-8">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
             <p className="text-on-surface-variant text-sm">Verifying your attendance...</p>
+            <div className="flex items-center gap-4 text-xs text-on-surface-variant/60">
+              <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> GPS</span>
+              <span className="flex items-center gap-1"><Wifi className="w-3 h-3" /> IP</span>
+              <span className="flex items-center gap-1"><QrCode className="w-3 h-3" /> Token</span>
+            </div>
           </div>
         )}
 
