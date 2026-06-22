@@ -116,8 +116,8 @@ export default function StudentCourses() {
 
       {filteredCourses.length === 0 ? (
         <div className="text-center py-16 text-on-surface-variant">
-          <p className="font-title-lg mb-2">No courses found</p>
-          <p className="font-body-md">{search ? 'Try a different search term.' : 'You are not enrolled in any courses yet.'}</p>
+          <p className="font-title-lg mb-2">No courses enrolled yet</p>
+          <p className="font-body-md">{search ? 'Try a different search term.' : 'Contact administration to get started with your courses.'}</p>
         </div>
       ) : (
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-md md:gap-lg">

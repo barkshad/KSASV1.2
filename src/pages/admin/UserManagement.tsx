@@ -300,7 +300,7 @@ export default function UserManagement() {
         ) : filteredUsers.length === 0 ? (
           <div className="text-center py-16 bg-surface-container-lowest rounded-2xl border border-outline-variant/30">
             <Users className="w-10 h-10 mx-auto text-outline mb-3" />
-            <p className="font-bold text-on-surface mb-1">No users found</p>
+            <p className="font-bold text-on-surface mb-1">No users registered yet. The Kabarak family awaits.</p>
             <p className="text-sm text-on-surface-variant">
               {search ? 'Try a different search term.' : 'Use the Import CSV or + button to add users.'}
             </p>

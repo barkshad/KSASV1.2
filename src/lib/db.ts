@@ -6,7 +6,8 @@ export const collections = {
   SESSIONS: 'sessions',
   COURSES: 'courses',
   ENROLLMENTS: 'enrollments',
-  AUDIT_LOGS: 'audit_logs'
+  AUDIT_LOGS: 'audit_logs',
+  FEEDBACK: 'feedback',
 };
 
 export async function logAudit(user: any, actionType: string, entity: string, details: string) {

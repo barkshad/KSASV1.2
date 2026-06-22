@@ -20,6 +20,8 @@ import LecturerRiskMonitor from './pages/lecturer/RiskMonitor';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminUserManagement from './pages/admin/UserManagement';
 import AdminCourseManagement from './pages/admin/CourseManagement';
+import AdminSessionArchive from './pages/admin/SessionArchive';
+import AdminAnalytics from './pages/admin/Analytics';
 import AdminReports from './pages/admin/reports';
 import NotFound from './pages/NotFound';
 import ServerError from './pages/ServerError';
@@ -57,6 +59,8 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<AdminUserManagement />} />
           <Route path="courses" element={<AdminCourseManagement />} />
+          <Route path="archive" element={<AdminSessionArchive />} />
+          <Route path="analytics" element={<AdminAnalytics />} />
           <Route path="reports" element={<AdminReports />} />
           <Route path="academics" element={<AdminDashboard />} /> {/* Fallback */}
           <Route path="settings" element={<AdminDashboard />} /> {/* Fallback */}

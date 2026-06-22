@@ -8,15 +8,15 @@ export default function NotFound() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: 'var(--bg-base)' }}>
       <div className="text-center max-w-md animate-fade-in">
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '120px', lineHeight: 1, fontWeight: 900, color: 'var(--gold-primary)', opacity: 0.2 }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '120px', lineHeight: 1, fontWeight: 900, color: 'var(--kabu-gold)', opacity: 0.2 }}>
           404
         </h1>
         <div className="mt-4">
           <h2 style={{ fontFamily: 'var(--font-editorial)', fontSize: '28px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
-            Page Not Found
+            Lost on Campus?
           </h2>
           <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--text-secondary)', fontWeight: 300, marginTop: '8px' }}>
-            The page you are looking for doesn't exist or has been moved.
+            This page doesn't exist — but your attendance record does. Go back.
           </p>
         </div>
         <button 
@@ -24,7 +24,7 @@ export default function NotFound() {
           className="mt-8 flex items-center justify-center gap-2 w-full h-12 btn-primary"
         >
           <Home className="w-5 h-5" />
-          Go Home
+          Return to Dashboard
         </button>
       </div>
     </div>

@@ -65,15 +65,15 @@ export function MobileNav({ role }: MobileNavProps) {
                     height: highlight ? '32px' : '32px',
                     background: highlight
                       ? isActive
-                        ? 'var(--gold-primary)'
-                        : 'var(--gold-subtle)'
+                        ? 'var(--kabu-gold)'
+                        : 'var(--kabu-gold-subtle)'
                       : isActive
-                        ? 'var(--gold-glow)'
+                        ? 'var(--kabu-gold-glow)'
                         : 'transparent',
                   }}
                 >
                   <Icon
-                    style={{ width: 20, height: 20, color: highlight ? (isActive ? 'var(--text-inverse)' : 'var(--gold-primary)') : (isActive ? 'var(--gold-primary)' : 'var(--text-tertiary)') }}
+                    style={{ width: 20, height: 20, color: highlight ? (isActive ? 'var(--text-inverse)' : 'var(--kabu-gold)') : (isActive ? 'var(--kabu-gold)' : 'var(--text-tertiary)') }}
                   />
                 </div>
                 <span
@@ -81,7 +81,7 @@ export function MobileNav({ role }: MobileNavProps) {
                   style={{
                     fontFamily: 'var(--font-body)',
                     fontWeight: 500,
-                    color: isActive ? 'var(--gold-primary)' : 'var(--text-tertiary)',
+                    color: isActive ? 'var(--kabu-gold)' : 'var(--text-tertiary)',
                   }}
                 >
                   {label}

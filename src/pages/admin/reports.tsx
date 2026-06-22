@@ -164,7 +164,7 @@ export default function Reports() {
           <div className="text-center py-16">
             <FileText className="w-10 h-10 mx-auto text-outline mb-3" />
             <p className="font-bold text-on-surface mb-1">No attendance records found</p>
-            <p className="text-sm text-on-surface-variant">Records appear here once students start checking in to sessions.</p>
+            <p className="text-sm text-on-surface-variant">No sessions recorded yet. The Kabarak family awaits.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">

@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
-import { Book, AlertTriangle, Clock, MapPin, CheckCircle, QrCode, Loader2 } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Book, AlertTriangle, Clock, MapPin, CheckCircle, QrCode, Loader2, Star, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
 import { useFirestoreRealtimeCollection } from '../../hooks/useFirestoreRealtime';
-import { getDocs, query, collection, where, db } from '../../lib/firebase';
+import { getDocs, query, collection, where, db, addDoc, serverTimestamp } from '../../lib/firebase';
 import { collections } from '../../lib/db';
 
 export default function StudentDashboard() {
@@ -61,6 +62,41 @@ export default function StudentDashboard() {
     return Math.round((present / attendance.length) * 100);
   }, [attendance]);
 
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [feedbackSession, setFeedbackSession] = useState('');
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+
+  const handleSubmitFeedback = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!feedbackSession || !feedbackRating || !user?.uid) return;
+    setSubmittingFeedback(true);
+    try {
+      const session = allSessions.find(s => s.id === feedbackSession);
+      await addDoc(collection(db, collections.FEEDBACK), {
+        sessionId: feedbackSession,
+        courseCode: session?.courseCode || '',
+        courseName: session?.courseName || '',
+        lecturerId: session?.lecturerId || '',
+        lecturerName: session?.lecturerName || '',
+        studentId: user.uid,
+        studentName: user.name || 'Student',
+        rating: feedbackRating,
+        comment: feedbackComment,
+        createdAt: serverTimestamp(),
+      });
+      setFeedbackRating(0);
+      setFeedbackComment('');
+      setFeedbackSession('');
+      toast('Feedback submitted. Thank you!', { icon: '✅' });
+    } catch (err) {
+      console.error('Failed to submit feedback', err);
+      toast.error('Failed to submit feedback.');
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  };
+
   if (loadingEnrollments || loadingSessions || loadingAttendance) {
       return (
         <div className="flex h-screen items-center justify-center">
@@ -77,8 +113,8 @@ export default function StudentDashboard() {
         <h1 style={{ fontFamily: 'var(--font-editorial)', fontSize: '28px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
           Good morning, {user?.name || 'Student'}
         </h1>
-        <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--text-secondary)', fontWeight: 300, marginTop: '4px' }}>
-          Ready for your classes today?
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 300, fontStyle: 'italic' }}>
+          As members of the Kabarak family, excellence is our calling.
         </p>
       </section>
 
@@ -165,7 +201,7 @@ export default function StudentDashboard() {
         >
           <div className="flex items-center gap-2 mb-2">
             <div className="p-2" style={{ background: 'var(--danger)', borderRadius: 'var(--radius-md)' }}>
-              <AlertTriangle className="w-5 h-5" style={{ color: '#F4A0A8' }} />
+              <AlertTriangle className="w-5 h-5" style={{ color: 'var(--text-on-maroon)' }} />
             </div>
             <h2 style={{ fontFamily: 'var(--font-editorial)', fontSize: '20px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
               Action Required
@@ -175,7 +211,7 @@ export default function StudentDashboard() {
             <span style={{ fontFamily: 'var(--font-display)', fontSize: '36px', fontWeight: 800, color: 'var(--danger)', lineHeight: 1 }}>
               {todaySessions.filter(s => s.status === 'open').length}
             </span>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: '#F4A0A8', marginBottom: '4px' }}>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--danger)', marginBottom: '4px' }}>
               Live Sessions
             </span>
           </div>
@@ -208,7 +244,7 @@ export default function StudentDashboard() {
                     {upcomingSession.date} • {upcomingSession.startTime} - {upcomingSession.endTime}
                   </span>
                 </div>
-                <h4 style={{ fontFamily: 'var(--font-editorial)', fontSize: '24px', color: '#F4A0A8', letterSpacing: '-0.01em' }}>
+                <h4 style={{ fontFamily: 'var(--font-editorial)', fontSize: '24px', color: 'var(--text-on-maroon)', letterSpacing: '-0.01em' }}>
                   {upcomingSession.courseName}
                 </h4>
                 <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'rgba(244,160,168,0.7)', marginTop: '4px' }}>
@@ -216,7 +252,7 @@ export default function StudentDashboard() {
                 </p>
                 <div className="flex items-center gap-2 mt-4">
                   <MapPin className="w-4 h-4" style={{ color: 'rgba(244,160,168,0.7)' }} />
-                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: '#F4A0A8' }}>
+                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--text-on-maroon)' }}>
                     {upcomingSession.room}
                   </span>
                 </div>
@@ -227,7 +263,7 @@ export default function StudentDashboard() {
                 className="w-full md:w-auto flex items-center justify-center gap-2 py-3 px-6 transition-all"
                 style={{
                   background: 'rgba(255,255,255,0.15)',
-                  color: '#F4A0A8',
+                  color: 'var(--text-on-maroon)',
                   borderRadius: 'var(--radius-md)',
                   border: 'none',
                   cursor: 'pointer',
@@ -328,13 +364,137 @@ export default function StudentDashboard() {
                 </ul>
             ) : (
                 <div className="p-6 text-center" style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-secondary)' }}>
-                    No recent check-ins found.
+                    No classes attended yet. Check in to your first session above.
                 </div>
             )}
           </div>
         </div>
 
       </div>
+
+      {/* Feedback Section */}
+      <section className="mt-10">
+        <h3 style={{ fontFamily: 'var(--font-editorial)', fontSize: '20px', color: 'var(--text-primary)', letterSpacing: '-0.01em', marginBottom: '4px' }}>
+          Session Feedback
+        </h3>
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 300, marginBottom: '16px' }}>
+          Help improve your learning experience — rate today's session.
+        </p>
+        <form
+          onSubmit={handleSubmitFeedback}
+          style={{
+            background: 'var(--bg-surface)',
+            border: '0.5px solid var(--bg-border)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '24px',
+          }}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label style={{ fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
+                Session
+              </label>
+              <select
+                value={feedbackSession}
+                onChange={e => setFeedbackSession(e.target.value)}
+                required
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  fontFamily: 'Outfit, sans-serif',
+                  fontSize: '14px',
+                  background: 'var(--bg-elevated)',
+                  border: '0.5px solid var(--bg-border)',
+                  borderRadius: 'var(--radius-md)',
+                  color: 'var(--text-primary)',
+                  outline: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="">Select a session</option>
+                {allSessions.filter(s => s.status === 'closed').slice(0, 20).map(s => (
+                  <option key={s.id} value={s.id}>{s.courseName || s.courseCode} — {s.date}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={{ fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: '6px', display: 'block' }}>
+                Rating
+              </label>
+              <div className="flex items-center gap-1" style={{ padding: '4px 0' }}>
+                {[1, 2, 3, 4, 5].map(n => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => setFeedbackRating(n)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '4px',
+                    }}
+                  >
+                    <Star
+                      className="w-6 h-6"
+                      style={{
+                        fill: n <= feedbackRating ? 'var(--gold-primary)' : 'none',
+                        color: n <= feedbackRating ? 'var(--gold-primary)' : 'var(--text-tertiary)',
+                        transition: 'fill 120ms ease, color 120ms ease',
+                      }}
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-end">
+              <button
+                type="submit"
+                disabled={submittingFeedback || !feedbackSession || !feedbackRating}
+                className="btn-primary w-full flex items-center justify-center gap-2"
+                style={{ fontFamily: 'Outfit, sans-serif', fontSize: '14px', fontWeight: 500, padding: '10px 20px' }}
+              >
+                {submittingFeedback ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {submittingFeedback ? 'Submitting...' : 'Submit Feedback'}
+              </button>
+            </div>
+          </div>
+          <div>
+            <textarea
+              value={feedbackComment}
+              onChange={e => setFeedbackComment(e.target.value)}
+              placeholder="Any additional comments? (optional)"
+              maxLength={500}
+              rows={2}
+              style={{
+                width: '100%',
+                padding: '10px 14px',
+                fontFamily: 'Outfit, sans-serif',
+                fontSize: '14px',
+                background: 'var(--bg-elevated)',
+                border: '0.5px solid var(--bg-border)',
+                borderRadius: 'var(--radius-md)',
+                color: 'var(--text-primary)',
+                outline: 'none',
+                resize: 'vertical',
+                boxSizing: 'border-box',
+              }}
+              onFocus={e => { e.currentTarget.style.borderColor = 'var(--gold-muted)'; }}
+              onBlur={e => { e.currentTarget.style.borderColor = 'var(--bg-border)'; }}
+            />
+            <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '11px', color: 'var(--text-tertiary)', textAlign: 'right', marginTop: '4px' }}>
+              {feedbackComment.length} / 500
+            </p>
+          </div>
+        </form>
+      </section>
+
+      {/* Footer */}
+      <div style={{ marginTop: '48px', paddingTop: '16px', borderTop: '0.5px solid var(--bg-border)', textAlign: 'center' }}>
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+          KSAS is built exclusively for Kabarak University · kabarak.ac.ke
+        </p>
+      </div>
+
     </div>
   );
 }

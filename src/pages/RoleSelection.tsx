@@ -11,94 +11,72 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
-  Shield,
-  BookOpen,
-  GraduationCap,
-  ShieldCheck,
 } from 'lucide-react';
 
 const ROLES = [
   {
     id: 'admin' as const,
-    title: 'Administrator',
-    desc: 'System management & analytics',
-    icon: Shield,
+    title: 'Admin',
+    desc: 'System configuration & academic management',
   },
   {
     id: 'lecturer' as const,
     title: 'Lecturer',
-    desc: 'Sessions, QR codes & attendance',
-    icon: BookOpen,
+    desc: 'Manage courses & view attendance analytics',
   },
   {
     id: 'student' as const,
     title: 'Student',
-    desc: 'Check-in & attendance history',
-    icon: GraduationCap,
+    desc: 'Check-in to classes & view history',
   },
 ] as const;
 
 type RoleId = typeof ROLES[number]['id'];
 
-function GoldParticles() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+function RoleIcon({ role, highlighted }: { role: RoleId; highlighted?: boolean }) {
+  const color = highlighted ? '#fff' : '#7B1A2B';
+  const wrapBg = highlighted ? 'rgba(255,255,255,0.18)' : 'rgba(123,26,43,0.08)';
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let animId: number;
-    const particles: { x: number; y: number; r: number; dx: number; dy: number; o: number }[] = [];
-
-    const resize = () => {
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-    };
-    resize();
-    window.addEventListener('resize', resize);
-
-    for (let i = 0; i < 40; i++) {
-      particles.push({
-        x: Math.random() * canvas.offsetWidth,
-        y: Math.random() * canvas.offsetHeight,
-        r: Math.random() * 1.5 + 0.5,
-        dx: (Math.random() - 0.5) * 0.3,
-        dy: (Math.random() - 0.5) * 0.2,
-        o: Math.random() * 0.4 + 0.1,
-      });
-    }
-
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
-      particles.forEach(p => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(201,168,76,${p.o})`;
-        ctx.fill();
-        p.x += p.dx;
-        p.y += p.dy;
-        if (p.x < 0 || p.x > canvas.offsetWidth) p.dx *= -1;
-        if (p.y < 0 || p.y > canvas.offsetHeight) p.dy *= -1;
-      });
-      animId = requestAnimationFrame(draw);
-    };
-    draw();
-
-    return () => {
-      cancelAnimationFrame(animId);
-      window.removeEventListener('resize', resize);
-    };
-  }, []);
-
+  if (role === 'admin') {
+    return (
+      <div className="role-icon-wrap" style={{ background: wrapBg }}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2L4 6v6c0 5.5 3.5 10.7 8 12 4.5-1.3 8-6.5 8-12V6L12 2z"/>
+        </svg>
+      </div>
+    );
+  }
+  if (role === 'lecturer') {
+    return (
+      <div className="role-icon-wrap" style={{ background: wrapBg }}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+        </svg>
+      </div>
+    );
+  }
   return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 w-full h-full pointer-events-none"
-      style={{ opacity: 0.6 }}
-    />
+    <div className="role-icon-wrap" style={{ background: wrapBg }}>
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+      </svg>
+    </div>
+  );
+}
+
+function ShieldLogoSvg() {
+  return (
+    <svg width="64" height="64" viewBox="0 0 64 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M32 2L6 12V34C6 50 18 63 32 70C46 63 58 50 58 34V12L32 2Z"
+            fill="#F9E8EA" stroke="#7B1A2B" strokeWidth="2.5" strokeLinejoin="round"/>
+      <path d="M32 8L12 16V34C12 47 21 58 32 64C43 58 52 47 52 34V16L32 8Z"
+            fill="white" stroke="#E8A8B2" strokeWidth="1" strokeLinejoin="round"/>
+      <path d="M20 34L28 43L44 26"
+            stroke="#7B1A2B" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="32" cy="22" r="2.5" fill="#C9A84C"/>
+    </svg>
   );
 }
 
@@ -186,407 +164,390 @@ export default function RoleSelection() {
     setLoginAttempts(0);
   };
 
-  const activeRole = ROLES.find((r) => r.id === selectedRole);
+  const isHighlighted = (id: RoleId) => selectedRole === id;
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* ─── Left Panel: Hero ─────────────────────────────────────── */}
-      <div
-        className="relative overflow-hidden flex-shrink-0 w-full lg:w-[520px] xl:w-[600px]"
-        style={{
-          background: 'linear-gradient(165deg, #0A0C10 0%, #1a0f12 35%, #2a1015 60%, #1a0a0e 100%)',
-        }}
-      >
-        {/* Gold accent line */}
-        <div
-          className="absolute top-0 left-0 w-full h-[2px]"
-          style={{ background: 'linear-gradient(90deg, transparent, var(--kabu-gold), transparent)' }}
-        />
+    <div style={{
+      display: 'flex',
+      minHeight: '100vh',
+      animation: 'fadeUp 300ms ease-out',
+      fontFamily: "'Outfit', sans-serif",
+    }}>
+      {/* ═══════════════ LEFT PANEL ═══════════════ */}
+      <div style={{
+        width: '380px',
+        minWidth: '380px',
+        background: '#F9E8EA',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '48px 36px 40px',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        {/* Radial bloom */}
+        <div style={{
+          position: 'absolute',
+          top: '-60px', left: '50%',
+          transform: 'translateX(-50%)',
+          width: '400px', height: '400px',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.55) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        }} />
 
-        {/* Radial glow */}
-        <div
-          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] pointer-events-none"
-          style={{
-            background: 'radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%)',
-          }}
-        />
+        {/* Logo circle */}
+        <div style={{
+          width: '140px', height: '140px',
+          background: '#fff',
+          borderRadius: '9999px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 4px 24px rgba(123,26,43,0.12)',
+          marginBottom: '28px',
+          position: 'relative',
+          zIndex: 1,
+        }}>
+          <ShieldLogoSvg />
+          <span style={{
+            fontFamily: "'Big Shoulders Display', sans-serif",
+            fontSize: '18px',
+            fontWeight: 800,
+            letterSpacing: '0.04em',
+            color: '#7B1A2B',
+          }}>KSAS</span>
+        </div>
 
-        {/* Subtle grid pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.025]"
-          style={{
-            backgroundImage: `linear-gradient(var(--text-primary) 1px, transparent 1px), linear-gradient(90deg, var(--text-primary) 1px, transparent 1px)`,
-            backgroundSize: '48px 48px',
-          }}
-        />
+        {/* Brand name */}
+        <div style={{
+          fontFamily: "'Big Shoulders Display', sans-serif",
+          fontSize: '52px',
+          fontWeight: 900,
+          letterSpacing: '-0.01em',
+          color: '#7B1A2B',
+          lineHeight: 1,
+          marginBottom: '4px',
+        }}>KSAS</div>
+        <div style={{
+          fontFamily: "'Outfit', sans-serif",
+          fontSize: '10px',
+          fontWeight: 500,
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          color: '#6B4A50',
+          marginBottom: '36px',
+        }}>Kabarak Smart Attendance</div>
 
-        {/* Floating particles */}
-        <GoldParticles />
-
-        <div className="relative z-10 px-10 py-10 lg:px-14 lg:py-14 flex flex-col justify-between min-h-[200px] lg:min-h-screen">
-          {/* Logo */}
-          <div className="flex items-center gap-3.5">
-            <div
-              className="w-11 h-11 flex items-center justify-center rounded-xl"
-              style={{
-                background: 'linear-gradient(135deg, var(--kabu-gold), var(--kabu-gold-dark))',
-                boxShadow: '0 4px 20px rgba(201,168,76,0.25)',
-              }}
-            >
-              <ShieldCheck className="w-6 h-6" style={{ color: 'var(--text-inverse)' }} />
+        {/* Feature list */}
+        <div style={{
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px',
+          marginTop: 'auto',
+        }}>
+          {/* Secure Verification */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            <div style={{ width: '28px', height: '28px', minWidth: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '2px' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7B1A2B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2L4 6v6c0 5.5 3.5 10.7 8 12 4.5-1.3 8-6.5 8-12V6L12 2z"/>
+                <path d="M9 12l2 2 4-4"/>
+              </svg>
             </div>
             <div>
-              <p
-                className="text-xl font-bold tracking-tight leading-none"
-                style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}
-              >
-                KSAS
-              </p>
-              <p
-                className="text-[10px] uppercase tracking-[0.25em] mt-0.5"
-                style={{ fontFamily: 'var(--font-body)', color: 'var(--kabu-gold-dark)' }}
-              >
-                Smart Attendance
-              </p>
+              <strong style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#7B1A2B', marginBottom: '2px' }}>Secure Verification</strong>
+              <span style={{ fontSize: '12px', fontWeight: 300, color: '#6B4A50', lineHeight: 1.5 }}>Device-bound authentication prevents proxy attendance.</span>
             </div>
           </div>
 
-          {/* Hero text */}
-          <div className="hidden lg:block mt-auto">
-            <div className="mb-6">
-              <div
-                className="w-12 h-[2px] mb-8"
-                style={{ background: 'linear-gradient(90deg, var(--kabu-gold), transparent)' }}
-              />
-              <h1
-                className="font-display-hero mb-6"
-                style={{
-                  color: 'var(--text-primary)',
-                  fontFamily: 'var(--font-display)',
-                  lineHeight: '1.05',
-                }}
-              >
-                Attendance,
-                <br />
-                <span style={{ color: 'var(--kabu-gold)' }}>made intelligent.</span>
-              </h1>
-              <p
-                className="font-body-lg max-w-sm mb-12"
-                style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}
-              >
-                QR-based check-in with real-time sync, device verification, and institutional analytics — built for Kabarak University.
-              </p>
+          {/* Live Synchronisation */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            <div style={{ width: '28px', height: '28px', minWidth: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '2px' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7B1A2B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
             </div>
-
-            {/* Feature list */}
-            <div className="space-y-4">
-              {[
-                { title: 'Rotating QR Codes', desc: 'Token refreshes every 30 seconds' },
-                { title: 'Device-Bound Check-In', desc: 'Prevents proxy attendance' },
-                { title: 'Real-Time Sync', desc: 'Instant updates across all devices' },
-              ].map((f, i) => (
-                <div key={f.title} className="flex items-start gap-4 group">
-                  <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-all duration-300 group-hover:scale-110"
-                    style={{
-                      background: 'var(--kabu-gold-subtle)',
-                      border: '1px solid rgba(201,168,76,0.2)',
-                    }}
-                  >
-                    <span
-                      className="text-xs font-bold"
-                      style={{ fontFamily: 'var(--font-mono)', color: 'var(--kabu-gold)' }}
-                    >
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                  </div>
-                  <div>
-                    <p
-                      className="text-sm font-medium"
-                      style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }}
-                    >
-                      {f.title}
-                    </p>
-                    <p
-                      className="text-xs mt-0.5"
-                      style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}
-                    >
-                      {f.desc}
-                    </p>
-                  </div>
-                </div>
-              ))}
+            <div>
+              <strong style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#7B1A2B', marginBottom: '2px' }}>Live Synchronisation</strong>
+              <span style={{ fontSize: '12px', fontWeight: 300, color: '#6B4A50', lineHeight: 1.5 }}>Real-time attendance tracking for every active session.</span>
             </div>
           </div>
 
-          {/* University badge */}
-          <div className="hidden lg:flex items-center gap-2 mt-8 opacity-40">
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--kabu-gold)' }} />
-            <p className="text-[10px] uppercase tracking-[0.2em]" style={{ fontFamily: 'var(--font-body)', color: 'var(--text-secondary)' }}>
-              Kabarak University · Since 2000
-            </p>
+          {/* Institutional Analytics */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            <div style={{ width: '28px', height: '28px', minWidth: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '2px' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7B1A2B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <path d="M3 9h18M9 21V9"/>
+              </svg>
+            </div>
+            <div>
+              <strong style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#7B1A2B', marginBottom: '2px' }}>Institutional Analytics</strong>
+              <span style={{ fontSize: '12px', fontWeight: 300, color: '#6B4A50', lineHeight: 1.5 }}>Full visibility into attendance trends across every course.</span>
+            </div>
           </div>
+        </div>
+
+        {/* Biblical tagline */}
+        <div style={{
+          marginTop: '32px',
+          paddingTop: '20px',
+          borderTop: '0.5px solid #E8A8B2',
+          fontSize: '10px',
+          fontWeight: 300,
+          fontStyle: 'italic',
+          color: '#9A7A82',
+          textAlign: 'center',
+          lineHeight: 1.6,
+          width: '100%',
+        }}>
+          "Education in Biblical Perspective"<br />
+          We purpose at all times and in all places to set apart<br />
+          in one's heart, Jesus as Lord. — 1 Peter 3:15
         </div>
       </div>
 
-      {/* ─── Right Panel: Auth ────────────────────────────────────── */}
-      <div
-        className="flex-1 flex flex-col justify-center p-8 sm:p-10 lg:px-16 lg:py-12"
-        style={{ background: 'var(--bg-base)' }}
-      >
-        <div className="w-full max-w-md mx-auto">
+      {/* ═══════════════ RIGHT PANEL ═══════════════ */}
+      <div style={{
+        flex: 1,
+        background: '#fff',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        padding: '64px 72px',
+        animation: 'fadeUp 350ms 60ms ease-out both',
+      }}>
+        <div style={{ maxWidth: '440px' }}>
           {!selectedRole ? (
             /* ── Role Selection ────────────────────────────────── */
-            <div className="animate-fade-in">
-              <div className="mb-10">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-6 h-[1px]" style={{ background: 'var(--kabu-gold)' }} />
-                  <span
-                    className="text-[10px] uppercase tracking-[0.2em] font-medium"
-                    style={{ fontFamily: 'var(--font-body)', color: 'var(--kabu-gold)' }}
-                  >
-                    Welcome
-                  </span>
-                </div>
-                <h2
-                  className="font-editorial-lg mb-3"
-                  style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-editorial)' }}
-                >
-                  Sign in to KSAS
-                </h2>
-                <p
-                  className="font-body-md"
-                  style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}
-                >
-                  Select your role to continue.
-                </p>
+            <>
+              <div style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8B6F2E', marginBottom: '8px' }}>
+                Kabarak University · Est. 2000
               </div>
+              <h1 style={{
+                fontFamily: "'Gloock', serif",
+                fontSize: '36px',
+                fontWeight: 400,
+                color: '#1A0508',
+                letterSpacing: '-0.01em',
+                marginBottom: '6px',
+                lineHeight: 1.15,
+              }}>
+                Welcome to KSAS
+              </h1>
+              <p style={{
+                fontSize: '14px',
+                fontWeight: 300,
+                color: '#6B4A50',
+                marginBottom: '40px',
+                lineHeight: 1.5,
+              }}>
+                Select your role to access the dashboard
+              </p>
 
-              <div className="space-y-3">
+              <div className="roles" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {ROLES.map((role) => {
-                  const Icon = role.icon;
+                  const highlighted = isHighlighted(role.id);
                   return (
-                    <button
+                    <div
                       key={role.id}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Sign in as ${role.title}`}
                       onClick={() => setSelectedRole(role.id)}
-                      className="w-full group focus-visible:outline-2 focus-visible:outline-gold-primary"
-                      style={{ padding: 0 }}
-                    >
-                      <div
-                        className="flex items-center gap-5 p-5 transition-all duration-200 cursor-pointer"
-                        style={{
-                          background: 'var(--bg-surface)',
-                          border: '1px solid var(--bg-border)',
-                          borderRadius: 'var(--radius-xl)',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = 'var(--kabu-gold-dark)';
-                          e.currentTarget.style.background = 'var(--bg-elevated)';
-                          e.currentTarget.style.transform = 'translateX(4px)';
-                          e.currentTarget.style.boxShadow = '0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(201,168,76,0.1)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = 'var(--bg-border)';
-                          e.currentTarget.style.background = 'var(--bg-surface)';
-                          e.currentTarget.style.transform = 'translateX(0)';
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedRole(role.id); } }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                        padding: '18px 20px',
+                        border: `1px solid ${highlighted ? '#7B1A2B' : '#EAD8DB'}`,
+                        borderRadius: '16px',
+                        background: highlighted ? '#7B1A2B' : '#fff',
+                        cursor: 'pointer',
+                        transition: 'border-color 160ms ease, background 160ms ease, box-shadow 160ms ease',
+                        textDecoration: 'none',
+                        position: 'relative',
+                        outline: 'none',
+                        boxShadow: highlighted ? '0 0 0 3px rgba(123,26,43,0.12)' : 'none',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!highlighted) {
+                          e.currentTarget.style.borderColor = '#E8A8B2';
+                          e.currentTarget.style.background = '#FEF4F5';
+                          e.currentTarget.style.boxShadow = '0 2px 12px rgba(123,26,43,0.08)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!highlighted) {
+                          e.currentTarget.style.borderColor = '#EAD8DB';
+                          e.currentTarget.style.background = '#fff';
                           e.currentTarget.style.boxShadow = 'none';
-                        }}
+                        }
+                      }}
+                      onFocus={(e) => {
+                        if (!highlighted) {
+                          e.currentTarget.style.borderColor = '#7B1A2B';
+                          e.currentTarget.style.background = '#F9E8EA';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(123,26,43,0.12)';
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (!highlighted) {
+                          e.currentTarget.style.borderColor = '#EAD8DB';
+                          e.currentTarget.style.background = '#fff';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }
+                      }}
+                    >
+                      <RoleIcon role={role.id} highlighted={highlighted} />
+                      <div style={{ flex: 1 }}>
+                        <span style={{
+                          fontSize: '15px',
+                          fontWeight: 600,
+                          color: highlighted ? '#fff' : '#1A0508',
+                          marginBottom: '2px',
+                          display: 'block',
+                        }}>
+                          {role.title}
+                        </span>
+                        <span style={{
+                          fontSize: '12.5px',
+                          fontWeight: 300,
+                          color: highlighted ? 'rgba(255,255,255,0.7)' : '#6B4A50',
+                          lineHeight: 1.4,
+                          display: 'block',
+                        }}>
+                          {role.desc}
+                        </span>
+                      </div>
+                      <div style={{ color: highlighted ? '#fff' : '#9A7A82', opacity: highlighted ? 1 : 0, transition: 'opacity 160ms ease, transform 160ms ease' }}
+                        className="role-arrow"
                       >
-                        <div
-                          className="w-12 h-12 flex items-center justify-center shrink-0 transition-all duration-200"
-                          style={{
-                            background:
-                              role.id === 'admin'
-                                ? 'linear-gradient(135deg, var(--kabu-maroon), var(--kabu-maroon-dark))'
-                                : role.id === 'lecturer'
-                                ? 'linear-gradient(135deg, var(--kabu-gold), var(--kabu-gold-dark))'
-                                : 'linear-gradient(135deg, var(--info), #1d4ed8)',
-                            borderRadius: 'var(--radius-lg)',
-                            boxShadow:
-                              role.id === 'admin'
-                                ? '0 4px 12px rgba(139,26,43,0.3)'
-                                : role.id === 'lecturer'
-                                ? '0 4px 12px rgba(201,168,76,0.3)'
-                                : '0 4px 12px rgba(37,99,235,0.3)',
-                          }}
-                        >
-                          <Icon
-                            className="w-6 h-6"
-                            style={{
-                              color: 'var(--text-primary)',
-                            }}
-                          />
-                        </div>
-                        <div className="flex-1 text-left min-w-0">
-                          <p
-                            className="text-base font-bold"
-                            style={{
-                              fontFamily: 'var(--font-display)',
-                              color: 'var(--text-primary)',
-                              letterSpacing: '-0.01em',
-                            }}
-                          >
-                            {role.title}
-                          </p>
-                          <p
-                            className="text-xs mt-0.5"
-                            style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}
-                          >
-                            {role.desc}
-                          </p>
-                        </div>
-                        <svg
-                          className="w-5 h-5 shrink-0 opacity-0 group-hover:opacity-100 transition-all duration-200"
-                          style={{ color: 'var(--kabu-gold)' }}
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M5 12h14M12 5l7 7-7 7"/>
                         </svg>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
 
-              <div className="mt-10 pt-6" style={{ borderTop: '1px solid var(--bg-border)' }}>
-                <p
-                  className="text-center font-body-sm"
-                  style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}
-                >
-                  Your account is created by your institution administrator.
-                </p>
+              {/* Footer tagline */}
+              <div style={{ marginTop: '48px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#C9A84C' }} />
+                <span style={{ fontSize: '11px', fontWeight: 300, color: '#9A7A82', fontStyle: 'italic' }}>
+                  Kenya's top private chartered institution of higher learning
+                </span>
               </div>
-            </div>
+            </>
           ) : (
             /* ── Login Form ────────────────────────────────────── */
             <div className="animate-slide-up">
               <button
                 onClick={handleBack}
-                className="flex items-center gap-2 font-body-sm mb-8 transition-all duration-200 group"
                 style={{
-                  color: 'var(--text-secondary)',
-                  fontFamily: 'var(--font-body)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '13px',
+                  fontWeight: 400,
+                  color: '#6B4A50',
+                  fontFamily: "'Outfit', sans-serif",
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
                   padding: 0,
+                  marginBottom: '32px',
+                  transition: 'color 160ms ease, transform 160ms ease',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'var(--kabu-gold)';
+                  e.currentTarget.style.color = '#7B1A2B';
                   e.currentTarget.style.transform = 'translateX(-2px)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = 'var(--text-secondary)';
+                  e.currentTarget.style.color = '#6B4A50';
                   e.currentTarget.style.transform = 'translateX(0)';
                 }}
               >
-                <ArrowLeft className="w-4 h-4 transition-transform duration-200 group-hover:-translate-x-0.5" />
+                <ArrowLeft className="w-4 h-4" />
                 Change role
               </button>
 
-              {activeRole && (
-                <div
-                  className="flex items-center gap-4 p-4 mb-8"
-                  style={{
-                    background: 'var(--bg-surface)',
-                    border: '1px solid var(--bg-border)',
-                    borderRadius: 'var(--radius-xl)',
-                  }}
-                >
-                  <div
-                    className="w-11 h-11 flex items-center justify-center shrink-0"
-                    style={{
-                      background:
-                        activeRole.id === 'admin'
-                          ? 'linear-gradient(135deg, var(--kabu-maroon), var(--kabu-maroon-dark))'
-                          : activeRole.id === 'lecturer'
-                          ? 'linear-gradient(135deg, var(--kabu-gold), var(--kabu-gold-dark))'
-                          : 'linear-gradient(135deg, var(--info), #1d4ed8)',
-                      borderRadius: 'var(--radius-lg)',
-                    }}
-                  >
-                    <activeRole.icon
-                      className="w-5 h-5"
-                      style={{ color: 'var(--text-primary)' }}
-                    />
-                  </div>
-                  <div>
-                    <p
-                      className="text-sm font-bold"
-                      style={{
-                        fontFamily: 'var(--font-display)',
-                        color: 'var(--text-primary)',
-                        letterSpacing: '-0.01em',
-                      }}
-                    >
-                      {activeRole.title}
-                    </p>
-                    <p
-                      className="text-xs mt-0.5"
-                      style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}
-                    >
-                      Sign in to your account
-                    </p>
-                  </div>
+              {/* Selected role indicator */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                padding: '16px 18px',
+                background: '#F9E8EA',
+                border: '1px solid #EAD8DB',
+                borderRadius: '16px',
+                marginBottom: '32px',
+              }}>
+                <RoleIcon role={selectedRole} />
+                <div>
+                  <p style={{ fontSize: '15px', fontWeight: 600, color: '#1A0508', margin: 0 }}>
+                    {ROLES.find(r => r.id === selectedRole)?.title}
+                  </p>
+                  <p style={{ fontSize: '12px', fontWeight: 300, color: '#6B4A50', margin: '4px 0 0' }}>
+                    Sign in to your account
+                  </p>
                 </div>
-              )}
+              </div>
 
-              <div className="mb-8">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-6 h-[1px]" style={{ background: 'var(--kabu-gold)' }} />
-                  <span
-                    className="text-[10px] uppercase tracking-[0.2em] font-medium"
-                    style={{ fontFamily: 'var(--font-body)', color: 'var(--kabu-gold)' }}
-                  >
-                    Credentials
-                  </span>
+              <div style={{ marginBottom: '32px' }}>
+                <div style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8B6F2E', marginBottom: '4px' }}>
+                  Credentials
                 </div>
-                <h2
-                  className="font-editorial-lg"
-                  style={{ color: 'var(--text-primary)', fontFamily: 'var(--font-editorial)' }}
-                >
+                <h2 style={{
+                  fontFamily: "'Gloock', serif",
+                  fontSize: '24px',
+                  fontWeight: 400,
+                  color: '#1A0508',
+                  letterSpacing: '-0.01em',
+                  margin: '8px 0 4px',
+                }}>
                   Welcome back
                 </h2>
-                <p
-                  className="font-body-md mt-1"
-                  style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}
-                >
+                <p style={{ fontSize: '13px', fontWeight: 300, color: '#6B4A50', margin: 0 }}>
                   Enter your credentials to continue.
                 </p>
               </div>
 
               {error && (
-                <div
-                  className="flex items-start gap-3 p-4 mb-6 font-body-sm animate-fade-in"
-                  style={{
-                    background: 'var(--danger-bg)',
-                    border: '1px solid rgba(139,26,43,0.4)',
-                    borderRadius: 'var(--radius-lg)',
-                    color: '#F4A0A8',
-                  }}
-                >
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '10px',
+                  padding: '12px 16px',
+                  background: '#FEF4F5',
+                  border: '1px solid #E8A8B2',
+                  borderRadius: '12px',
+                  fontSize: '13px',
+                  color: '#7B1A2B',
+                  marginBottom: '24px',
+                }}>
+                  <AlertCircle className="w-4 h-4 shrink-0" style={{ marginTop: '1px' }} />
                   <span>{error}</span>
                 </div>
               )}
 
-              <form onSubmit={handleLogin} className="space-y-5">
-                <div className="space-y-2">
-                  <label
-                    className="form-label"
-                    htmlFor="email"
-                    style={{ color: 'var(--text-secondary)' }}
-                  >
+              <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label htmlFor="email" style={{
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    color: '#6B4A50',
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    fontFamily: "'Outfit', sans-serif",
+                  }}>
                     Email
                   </label>
-                  <div className="relative">
-                    <Mail
-                      className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-                      style={{ color: 'var(--text-tertiary)' }}
-                    />
+                  <div style={{ position: 'relative' }}>
+                    <Mail className="absolute" style={{ left: '14px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: '#9A7A82', pointerEvents: 'none' }} />
                     <input
                       id="email"
                       type="email"
@@ -595,24 +556,38 @@ export default function RoleSelection() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@kabarak.ac.ke"
-                      className="input-with-icon-l"
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px 12px 40px',
+                        borderRadius: '12px',
+                        border: '1px solid #EAD8DB',
+                        background: '#fff',
+                        color: '#1A0508',
+                        fontFamily: "'Outfit', sans-serif",
+                        fontSize: '14px',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                        transition: 'border-color 150ms ease, box-shadow 150ms ease',
+                      }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = '#7B1A2B'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(123,26,43,0.1)'; }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = '#EAD8DB'; e.currentTarget.style.boxShadow = 'none'; }}
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label
-                    className="form-label"
-                    htmlFor="password"
-                    style={{ color: 'var(--text-secondary)' }}
-                  >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label htmlFor="password" style={{
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    color: '#6B4A50',
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    fontFamily: "'Outfit', sans-serif",
+                  }}>
                     Password
                   </label>
-                  <div className="relative">
-                    <Lock
-                      className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-                      style={{ color: 'var(--text-tertiary)' }}
-                    />
+                  <div style={{ position: 'relative' }}>
+                    <Lock className="absolute" style={{ left: '14px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: '#9A7A82', pointerEvents: 'none' }} />
                     <input
                       id="password"
                       type={showPw ? 'text' : 'password'}
@@ -621,27 +596,40 @@ export default function RoleSelection() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Enter password"
-                      className="input-with-icon-l"
-                      style={{ paddingRight: '44px' }}
+                      style={{
+                        width: '100%',
+                        padding: '12px 44px 12px 40px',
+                        borderRadius: '12px',
+                        border: '1px solid #EAD8DB',
+                        background: '#fff',
+                        color: '#1A0508',
+                        fontFamily: "'Outfit', sans-serif",
+                        fontSize: '14px',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                        transition: 'border-color 150ms ease, box-shadow 150ms ease',
+                      }}
+                      onFocus={(e) => { e.currentTarget.style.borderColor = '#7B1A2B'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(123,26,43,0.1)'; }}
+                      onBlur={(e) => { e.currentTarget.style.borderColor = '#EAD8DB'; e.currentTarget.style.boxShadow = 'none'; }}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPw((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                      aria-label={showPw ? 'Hide password' : 'Show password'}
                       style={{
-                        color: 'var(--text-tertiary)',
+                        position: 'absolute',
+                        right: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        color: '#9A7A82',
                         background: 'none',
                         border: 'none',
                         cursor: 'pointer',
                         padding: '4px',
+                        transition: 'color 150ms ease',
                       }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = 'var(--text-primary)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = 'var(--text-tertiary)';
-                      }}
-                      aria-label={showPw ? 'Hide password' : 'Show password'}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = '#1A0508'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = '#9A7A82'; }}
                     >
                       {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -651,33 +639,35 @@ export default function RoleSelection() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full mt-3 transition-all duration-200"
                   style={{
+                    width: '100%',
                     height: '48px',
-                    fontFamily: 'var(--font-body)',
+                    fontFamily: "'Outfit', sans-serif",
                     fontWeight: 600,
                     fontSize: '14px',
                     letterSpacing: '0.03em',
-                    background: loading ? 'var(--kabu-gold-dark)' : 'linear-gradient(135deg, var(--kabu-gold), #d4b65c)',
-                    color: 'var(--text-inverse)',
-                    borderRadius: 'var(--radius-md)',
+                    background: loading ? '#8B6F2E' : '#7B1A2B',
+                    color: '#fff',
+                    borderRadius: '12px',
                     border: 'none',
                     cursor: loading ? 'wait' : 'pointer',
-                    boxShadow: '0 4px 16px rgba(201,168,76,0.3)',
+                    boxShadow: '0 4px 16px rgba(123,26,43,0.3)',
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
+                    marginTop: '4px',
+                    transition: 'box-shadow 200ms ease, transform 150ms ease',
                   }}
                   onMouseEnter={(e) => {
                     if (!loading) {
-                      e.currentTarget.style.boxShadow = '0 6px 24px rgba(201,168,76,0.4)';
+                      e.currentTarget.style.boxShadow = '0 6px 24px rgba(123,26,43,0.4)';
                       e.currentTarget.style.transform = 'translateY(-1px)';
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!loading) {
-                      e.currentTarget.style.boxShadow = '0 4px 16px rgba(201,168,76,0.3)';
+                      e.currentTarget.style.boxShadow = '0 4px 16px rgba(123,26,43,0.3)';
                       e.currentTarget.style.transform = 'translateY(0)';
                     }
                   }}
@@ -692,18 +682,49 @@ export default function RoleSelection() {
                 </button>
               </form>
 
-              <div className="mt-10 pt-6" style={{ borderTop: '1px solid var(--bg-border)' }}>
-                <p
-                  className="text-center font-body-sm"
-                  style={{ color: 'var(--text-tertiary)', fontFamily: 'var(--font-body)' }}
-                >
-                  Account access issues? Contact your institution's IT support.
+              <div style={{ marginTop: '40px', paddingTop: '24px', borderTop: '1px solid #EAD8DB' }}>
+                <p style={{
+                  textAlign: 'center',
+                  fontSize: '12px',
+                  fontWeight: 300,
+                  color: '#9A7A82',
+                  fontFamily: "'Outfit', sans-serif",
+                }}>
+                  Your account is created by your institution administrator.
                 </p>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      <style>{`
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slideUp 0.25s ease-out forwards; }
+        .role-arrow {
+          transition: opacity 160ms ease, transform 160ms ease;
+        }
+        div[role="button"]:hover .role-arrow,
+        div[role="button"]:focus-within .role-arrow {
+          opacity: 1 !important;
+          transform: translateX(2px);
+        }
+        @media (max-width: 720px) {
+          div[style*="display: flex"][style*="min-height: 100vh"] { flex-direction: column !important; }
+          div[style*="width: 380px"] { width: 100% !important; min-width: unset !important; padding: 40px 24px 32px !important; }
+          div[style*="padding: 64px 72px"] { padding: 40px 24px !important; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+        }
+      `}</style>
     </div>
   );
 }

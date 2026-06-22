@@ -150,7 +150,7 @@ export default function SessionArchive() {
               outline: 'none',
               boxSizing: 'border-box',
             }}
-            onFocus={e => { e.currentTarget.style.borderColor = 'var(--gold-muted)'; }}
+            onFocus={e => { e.currentTarget.style.borderColor = 'var(--kabu-gold-dark)'; }}
             onBlur={e => { e.currentTarget.style.borderColor = 'var(--bg-border)'; }}
           />
         </div>
@@ -215,12 +215,12 @@ export default function SessionArchive() {
       {/* Table */}
       {loading ? (
         <div className="flex justify-center py-16">
-          <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--gold-primary)' }} />
+          <Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--kabu-gold)' }} />
         </div>
       ) : filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-tertiary)' }}>
           <Archive className="w-10 h-10 mx-auto mb-3" style={{ opacity: 0.5 }} />
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', fontWeight: 400 }}>No sessions found</p>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', fontWeight: 400 }}>No sessions recorded yet. The Kabarak family awaits.</p>
         </div>
       ) : (
         <div
@@ -372,8 +372,8 @@ export default function SessionArchive() {
 
             {/* Topic */}
             {detailSession.topicOfDay && (
-              <div style={{ marginBottom: '24px', padding: '12px 16px', background: 'var(--gold-subtle)', border: '0.5px solid var(--gold-muted)', borderRadius: 'var(--radius-md)' }}>
-                <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--gold-primary)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '4px' }}>Topic of Day</p>
+              <div style={{ marginBottom: '24px', padding: '12px 16px', background: 'var(--kabu-gold-subtle)', border: '0.5px solid var(--kabu-gold-dark)', borderRadius: 'var(--radius-md)' }}>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--kabu-gold)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: '4px' }}>Topic of Day</p>
                 <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-primary)' }}>{detailSession.topicOfDay}</p>
               </div>
             )}

@@ -41,7 +41,7 @@ export function TopAppBar({ role, user }: TopAppBarProps) {
           className="w-8 h-8 rounded-lg flex items-center justify-center"
           style={{ background: 'var(--kabu-maroon)' }}
         >
-          <ShieldCheck className="w-4 h-4" style={{ width: 18, height: 18, color: '#F4A0A8' }} />
+          <ShieldCheck className="w-4 h-4" style={{ width: 18, height: 18, color: 'var(--text-on-maroon)' }} />
         </div>
         <span className="text-base font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>KSAS</span>
       </div>
@@ -123,7 +123,7 @@ export function TopAppBar({ role, user }: TopAppBarProps) {
                 <button
                   onClick={() => { logout(); setMenuOpen(false); }}
                   className="w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors"
-                  style={{ color: '#F4A0A8', fontFamily: 'var(--font-body)', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                  style={{ color: 'var(--danger)', fontFamily: 'var(--font-body)', fontWeight: 500, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--danger-bg)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
                 >

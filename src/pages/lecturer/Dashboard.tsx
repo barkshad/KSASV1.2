@@ -1,11 +1,14 @@
 import React, { useMemo, useEffect, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Radio, StopCircle, QrCode, AlertCircle, FileBarChart, Calendar, Loader2, Bookmark, DownloadCloud, CheckCircle, X } from 'lucide-react';
+import { Radio, StopCircle, QrCode, AlertCircle, FileBarChart, Calendar, Loader2, Bookmark, DownloadCloud, CheckCircle, X, TrendingUp, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import {
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts';
 import { useAuth } from '../../hooks/useAuth';
 import { useFirestoreRealtimeCollection } from '../../hooks/useFirestoreRealtime';
-import { db, collection, addDoc, serverTimestamp, doc, updateDoc, onSnapshot, getDocs } from '../../lib/firebase';
+import { db, collection, addDoc, serverTimestamp, doc, updateDoc, onSnapshot, getDocs, query, where } from '../../lib/firebase';
 import { collections, archiveSession } from '../../lib/db';
 import { generateSessionTOTPSecret } from '../../lib/totp';
 import { exportSessionCSV } from '../../lib/csvExport';
@@ -157,10 +160,8 @@ export default function LecturerDashboard() {
         <h1 style={{ fontFamily: 'var(--font-editorial)', fontSize: '28px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
           Welcome back, {user?.name || 'Lecturer'}
         </h1>
-        <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--text-secondary)', fontWeight: 300, marginTop: '4px' }}>
-          {activeSession
-            ? `Active session: ${activeSession.courseName} — ${attendanceCount} students checked in`
-            : 'No active session. Start one below to begin accepting check-ins.'}
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 300, fontStyle: 'italic' }}>
+          Education in Biblical Perspective · {user?.department || 'Lecturer'}
         </p>
       </div>
 
@@ -426,6 +427,39 @@ export default function LecturerDashboard() {
           </div>
         </div>
 
+        {/* Attendance Analytics */}
+        <div
+          className="md:col-span-12"
+          style={{
+            padding: '24px',
+            background: 'var(--bg-surface)',
+            borderRadius: 'var(--radius-lg)',
+            border: '0.5px solid var(--bg-border)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 0 0 0.5px var(--bg-border)',
+          }}
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 style={{ fontFamily: 'var(--font-editorial)', fontSize: '20px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+                Attendance Analytics
+              </h3>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 300, marginTop: '2px' }}>
+                Course attendance rates and recent session history
+              </p>
+            </div>
+            <button
+              onClick={() => navigate('/lecturer/reports')}
+              className="btn-ghost"
+              style={{ fontSize: '12px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <FileBarChart className="w-3.5 h-3.5" />
+              View Reports
+            </button>
+          </div>
+
+          <AnalyticsSection sessions={allSessions} userId={user?.uid} />
+        </div>
+
       </div>
 
       {/* End Session Confirmation Modal */}
@@ -459,7 +493,7 @@ export default function LecturerDashboard() {
                   margin: '0 auto 16px',
                 }}
               >
-                <StopCircle className="w-5 h-5" style={{ color: '#F4A0A8' }} />
+                <StopCircle className="w-5 h-5" style={{ color: 'var(--danger)' }} />
               </div>
               <h3 style={{ fontFamily: 'var(--font-editorial)', fontSize: '22px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
                 End Session
@@ -550,6 +584,251 @@ export default function LecturerDashboard() {
         </div>,
         document.body
       )}
+    </div>
+  );
+}
+
+function AnalyticsSection({ sessions, userId }: { sessions: any[]; userId?: string }) {
+  const [feedbackList, setFeedbackList] = useState<any[]>([]);
+  const [loadingFeedback, setLoadingFeedback] = useState(true);
+
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      setLoadingFeedback(true);
+      try {
+        const q = query(collection(db, collections.FEEDBACK), where('lecturerId', '==', userId));
+        const snap = await getDocs(q);
+        setFeedbackList(snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a: any, b: any) => {
+          const ta = a.createdAt?.toMillis?.() || 0;
+          const tb = b.createdAt?.toMillis?.() || 0;
+          return tb - ta;
+        }));
+      } catch {
+        setFeedbackList([]);
+      } finally {
+        setLoadingFeedback(false);
+      }
+    })();
+  }, [userId]);
+  const mySessions = useMemo(() => sessions.filter(s => s.lecturerId === userId), [sessions, userId]);
+
+  const courseStats = useMemo(() => {
+    const map = new Map<string, { total: number; present: number; name: string }>();
+    mySessions.forEach(s => {
+      if (!s.courseCode) return;
+      const existing = map.get(s.courseCode);
+      const p = s.enrolledCount || 50;
+      if (existing) {
+        existing.total += p;
+        existing.present += s.attendanceCount || 0;
+      } else {
+        map.set(s.courseCode, { total: p, present: s.attendanceCount || 0, name: s.courseName || s.courseCode });
+      }
+    });
+    return Array.from(map.entries())
+      .map(([code, v]) => ({
+        course: code,
+        name: v.name,
+        rate: v.total > 0 ? Math.round((v.present / v.total) * 100) : 0,
+        present: v.present,
+        total: v.total,
+      }))
+      .sort((a, b) => a.rate - b.rate);
+  }, [mySessions]);
+
+  const recentSessions = useMemo(() => {
+    return [...mySessions]
+      .filter(s => s.status === 'closed')
+      .sort((a, b) => {
+        if (a.date < b.date) return 1;
+        if (a.date > b.date) return -1;
+        return 0;
+      })
+      .slice(0, 10);
+  }, [mySessions]);
+
+  const totalSessions = mySessions.length;
+  const avgRate = courseStats.length > 0 ? Math.round(courseStats.reduce((s, c) => s + c.rate, 0) / courseStats.length) : 0;
+
+  const getRateColor = (rate: number) => {
+    if (rate >= 75) return 'var(--success)';
+    if (rate >= 50) return 'var(--warning)';
+    return 'var(--danger)';
+  };
+
+  const chartTooltipStyle = {
+    background: 'var(--bg-elevated)',
+    border: '0.5px solid var(--bg-border)',
+    borderRadius: 'var(--radius-md)',
+    fontSize: '13px',
+    fontFamily: 'Outfit, sans-serif',
+  };
+
+  if (mySessions.length === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-tertiary)' }}>
+        <TrendingUp className="w-8 h-8 mx-auto mb-2" style={{ opacity: 0.5 }} />
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px' }}>No session data yet. Start a session to see analytics.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {/* Mini stat row */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <div style={{ padding: '16px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '24px', color: 'var(--text-primary)', fontWeight: 500 }}>{totalSessions}</p>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: '4px' }}>Sessions</p>
+        </div>
+        <div style={{ padding: '16px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '24px', color: 'var(--text-primary)', fontWeight: 500 }}>{courseStats.length}</p>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: '4px' }}>Courses</p>
+        </div>
+        <div style={{ padding: '16px', background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '24px', color: getRateColor(avgRate), fontWeight: 500 }}>{avgRate}%</p>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-tertiary)', letterSpacing: '0.06em', textTransform: 'uppercase', marginTop: '4px' }}>Avg Rate</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Course bar chart */}
+        <div>
+          <h4 style={{ fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>
+            Attendance by Course
+          </h4>
+          {courseStats.length > 0 ? (
+            <ResponsiveContainer width="100%" height={Math.max(180, courseStats.length * 36)}>
+              <BarChart data={courseStats} layout="vertical" margin={{ left: 80 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--bg-border)" horizontal={false} />
+                <XAxis type="number" domain={[0, 100]} tick={{ fill: 'var(--text-tertiary)', fontSize: 10, fontFamily: 'Outfit, sans-serif' }} tickLine={false} axisLine={{ stroke: 'var(--bg-border)' }} tickFormatter={v => `${v}%`} />
+                <YAxis type="category" dataKey="course" tick={{ fill: 'var(--text-secondary)', fontSize: 11, fontFamily: 'Outfit, sans-serif' }} tickLine={false} axisLine={{ stroke: 'var(--bg-border)' }} width={75} />
+                <Tooltip contentStyle={chartTooltipStyle} formatter={(value: number, _n: string, props: any) => [`${value}% (${props.payload.present}/${props.payload.total})`, 'Rate']} />
+                <Bar dataKey="rate" radius={[0, 4, 4, 0]}>
+                  {courseStats.map((entry, i) => (
+                    <rect key={i} fill={entry.rate >= 75 ? 'var(--success)' : entry.rate >= 50 ? 'var(--warning)' : 'var(--danger)'} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-tertiary)', textAlign: 'center', padding: '24px 0' }}>No data</p>
+          )}
+        </div>
+
+        {/* Recent sessions */}
+        <div>
+          <h4 style={{ fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>
+            Recent Sessions
+          </h4>
+          {recentSessions.length > 0 ? (
+            <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
+              {recentSessions.map(s => {
+                const pct = s.enrolledCount ? Math.min(100, Math.round(((s.attendanceCount || 0) / s.enrolledCount) * 100)) : 0;
+                return (
+                  <div
+                    key={s.id}
+                    className="flex items-center justify-between py-2.5 px-3"
+                    style={{ borderBottom: '0.5px solid var(--bg-border)', borderRadius: 'var(--radius-sm)' }}
+                  >
+                    <div className="min-w-0 flex-1 mr-3">
+                      <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {s.courseName || s.courseCode}
+                      </p>
+                      <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                        {s.date || '—'} · {s.startTime || '—'} · {s.room || '—'}
+                      </p>
+                    </div>
+                    <span
+                      className="badge"
+                      style={{
+                        background: pct >= 75 ? 'var(--success-bg)' : pct >= 50 ? 'var(--warning-bg)' : 'var(--danger-bg)',
+                        color: pct >= 75 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)',
+                        border: `0.5px solid ${pct >= 75 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)'}`,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {pct}%
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-tertiary)', textAlign: 'center', padding: '24px 0' }}>No sessions yet — start one to begin tracking attendance.</p>
+          )}
+        </div>
+      </div>
+
+      {/* Student Feedback */}
+      <div className="mt-6">
+        <h4 style={{ fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '12px' }}>
+          Student Feedback ({feedbackList.length})
+        </h4>
+        {loadingFeedback ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="w-5 h-5 animate-spin" style={{ color: 'var(--gold-primary)' }} />
+          </div>
+        ) : feedbackList.length === 0 ? (
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-tertiary)', textAlign: 'center', padding: '24px 0' }}>
+            No feedback received yet.
+          </p>
+        ) : (
+          <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+            {feedbackList.slice(0, 20).map((fb: any) => (
+              <div
+                key={fb.id}
+                style={{
+                  padding: '12px 16px',
+                  marginBottom: '8px',
+                  background: 'var(--bg-elevated)',
+                  border: '0.5px solid var(--bg-border)',
+                  borderRadius: 'var(--radius-md)',
+                }}
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span style={{ fontFamily: 'Outfit, sans-serif', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}>
+                      {fb.studentName || 'Anonymous'}
+                    </span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+                      {fb.courseCode}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map(n => (
+                      <Star
+                        key={n}
+                        className="w-3.5 h-3.5"
+                        style={{
+                          fill: n <= (fb.rating || 0) ? 'var(--gold-primary)' : 'none',
+                          color: n <= (fb.rating || 0) ? 'var(--gold-primary)' : 'var(--text-tertiary)',
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+                {fb.comment && (
+                  <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                    {fb.comment}
+                  </p>
+                )}
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-tertiary)', marginTop: '6px' }}>
+                  {fb.createdAt?.toDate?.()?.toLocaleString() || '—'}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div style={{ marginTop: '48px', paddingTop: '16px', borderTop: '0.5px solid var(--bg-border)', textAlign: 'center' }}>
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+          KSAS is built exclusively for Kabarak University · kabarak.ac.ke
+        </p>
+      </div>
     </div>
   );
 }

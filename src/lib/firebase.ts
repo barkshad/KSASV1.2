@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, Timestamp, onSnapshot, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, orderBy, limit, Timestamp, onSnapshot, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { env } from './env';
 
 const firebaseConfig = {
@@ -26,6 +26,8 @@ export {
   deleteDoc,
   query,
   where,
+  orderBy,
+  limit,
   Timestamp,
   onSnapshot,
   runTransaction,

@@ -60,6 +60,8 @@ export function DesktopSidebar({ role, user }: DesktopSidebarProps) {
       { to: '/admin/users', icon: Users, label: 'User Management' },
       { to: '/admin/academics', icon: School, label: 'Academics' },
       { to: '/admin/courses', icon: BookOpen, label: 'Courses' },
+      { to: '/admin/archive', icon: Archive, label: 'Session Archive' },
+      { to: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
       { to: '/admin/reports', icon: FileText, label: 'Reports' },
       { to: '/admin/settings', icon: Settings, label: 'Settings & Profile' },
     ],
@@ -75,7 +77,7 @@ export function DesktopSidebar({ role, user }: DesktopSidebarProps) {
           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
           style={{ background: 'var(--kabu-maroon)' }}
         >
-          <ShieldCheck className="w-5 h-5" style={{ color: '#F4A0A8' }} />
+          <ShieldCheck className="w-5 h-5" style={{ color: 'var(--text-on-maroon)' }} />
         </div>
         <div>
           <span className="text-lg font-bold tracking-tight" style={{ fontFamily: 'var(--font-display)', color: 'var(--text-primary)' }}>KSAS</span>
@@ -136,7 +138,7 @@ export function DesktopSidebar({ role, user }: DesktopSidebarProps) {
           onClick={logout}
           className="w-full flex items-center gap-3 px-4 py-3 transition-colors group"
           style={{
-            color: '#F4A0A8',
+            color: 'var(--danger)',
             fontFamily: 'var(--font-body)',
             fontSize: '14px',
             fontWeight: 500,

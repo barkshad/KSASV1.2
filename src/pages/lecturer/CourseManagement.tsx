@@ -78,7 +78,7 @@ export default function CourseManagement() {
 
         {courseStats.length === 0 ? (
           <div className="lg:col-span-12 bg-surface-container rounded-xl p-6 text-center text-on-surface-variant border border-outline-variant/30">
-            No courses assigned yet. Contact administration to get course access.
+            No courses assigned yet. Contact administration to get course access for the Kabarak family.
           </div>
         ) : (
           <>

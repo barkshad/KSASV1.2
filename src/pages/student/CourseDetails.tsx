@@ -172,7 +172,7 @@ export default function CourseDetails() {
         </div>
         <div className="divide-y divide-surface-variant">
           {attendanceList.length === 0 ? (
-            <div className="p-md text-center text-on-surface-variant font-body-sm">No attendance records for this course.</div>
+            <div className="p-md text-center text-on-surface-variant font-body-sm">No classes attended yet. Check in to your first session above.</div>
           ) : (
             attendanceList.map((item) => (
             <div key={item.id} className="p-md flex items-center justify-between hover:bg-surface-container-low transition-colors">
