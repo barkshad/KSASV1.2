@@ -1,9 +1,10 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Flame, Trophy, Lock, AlertTriangle, Loader2, TrendingUp, TrendingDown, Minus, Users } from 'lucide-react';
+import { Flame, Trophy, Lock, AlertTriangle, Loader2, TrendingUp, TrendingDown, Minus, Users, Shield } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useFirestoreRealtimeCollection } from '../../hooks/useFirestoreRealtime';
 import { db, collection, getDocs, query, where } from '../../lib/firebase';
 import { collections } from '../../lib/db';
+import { EXAM_ELIGIBILITY_THRESHOLD } from '../../lib/gamification';
 
 export default function Analytics() {
   const { user } = useAuth();
@@ -122,7 +123,7 @@ export default function Analytics() {
       if (total === 0) continue;
       const present = courseAtt.filter(a => a.status !== 'absent').length;
       const pct = Math.round((present / total) * 100);
-      if (pct < 75) {
+      if (pct < EXAM_ELIGIBILITY_THRESHOLD) {
         const course = courses.find(c => c.code === code);
         result.push({ code, name: course?.name || code, pct });
       }
@@ -217,9 +218,9 @@ export default function Analytics() {
           <div className="flex-1 text-center md:text-left">
             <h2 className="font-title-lg font-bold text-primary mb-2">Overall Attendance</h2>
             <p className="font-body-md text-on-surface-variant mb-6">
-              {overall.pct >= 75 ? 'You are maintaining good attendance this semester. Keep it up!' :
-               overall.pct >= 50 ? 'Your attendance needs improvement. Please attend more classes.' :
-               'Your attendance is critically low. Immediate action is required.'}
+              {overall.pct >= EXAM_ELIGIBILITY_THRESHOLD ? 'You are maintaining good attendance this semester. You are eligible for exams!' :
+               overall.pct >= 50 ? `Your attendance needs improvement. You need ${EXAM_ELIGIBILITY_THRESHOLD}% for exam eligibility.` :
+               'Your attendance is critically low. Immediate action is required for exam eligibility.'}
             </p>
             
             <div className="flex flex-wrap gap-4 justify-center md:justify-start">
@@ -237,7 +238,7 @@ export default function Analytics() {
           <div className="w-48 h-48 shrink-0 flex items-center justify-center relative">
              <svg className="w-full h-full transform -rotate-90">
               <circle cx="96" cy="96" r="80" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-surface-container-low"></circle>
-              <circle cx="96" cy="96" r="80" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray="502.4" strokeDashoffset={502.4 - (502.4 * overall.pct / 100)} strokeLinecap="round" className={overall.pct < 50 ? 'text-error' : overall.pct < 75 ? 'text-secondary' : 'text-success'}></circle>
+              <circle cx="96" cy="96" r="80" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray="502.4" strokeDashoffset={502.4 - (502.4 * overall.pct / 100)} strokeLinecap="round" className={overall.pct < 50 ? 'text-error' : overall.pct < EXAM_ELIGIBILITY_THRESHOLD ? 'text-secondary' : 'text-success'}></circle>
             </svg>
             <span className="absolute font-display-lg text-primary">{overall.pct}%</span>
           </div>
@@ -261,6 +262,44 @@ export default function Analytics() {
               <p className="font-label-md text-on-surface-variant mt-2">Longest</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Exam Eligibility Overview */}
+      <div className="bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/20">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-title-lg font-bold text-primary">Exam Eligibility</h3>
+          <Shield className="text-on-surface-variant w-6 h-6" />
+        </div>
+        <p className="font-body-sm text-on-surface-variant mb-4">Minimum {EXAM_ELIGIBILITY_THRESHOLD}% attendance required per unit to sit for exams.</p>
+        <div className="space-y-3">
+          {courseCodes.map(code => {
+            const courseSessions = allSessions.filter(s => s.courseCode === code);
+            const courseAtt = attendanceList.filter(a => a.courseCode === code);
+            const total = courseSessions.length;
+            if (total === 0) return null;
+            const attended = courseAtt.filter(a => a.status !== 'absent').length;
+            const pct = Math.round((attended / total) * 100);
+            const eligible = pct >= EXAM_ELIGIBILITY_THRESHOLD;
+            const course = courses.find(c => c.code === code);
+            return (
+              <div key={code} className="flex items-center gap-3 p-3 rounded-lg" style={{ background: eligible ? 'var(--success-container/10)' : 'var(--error-container/10)', border: `1px solid ${eligible ? 'var(--success)' : 'var(--error)'}20` }}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${eligible ? 'bg-success/20' : 'bg-error/20'}`}>
+                  {eligible ? <Shield className="w-4 h-4 text-success" /> : <AlertTriangle className="w-4 h-4 text-error" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-body-md font-bold text-primary">{code}</p>
+                  <p className="font-body-sm text-on-surface-variant truncate">{course?.name || code}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className={`font-headline-md font-bold ${eligible ? 'text-success' : 'text-error'}`}>{pct}%</span>
+                  <p className={`font-label-md mt-0.5 ${eligible ? 'text-success' : 'text-error'}`}>
+                    {eligible ? 'Eligible' : 'At Risk'}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -311,14 +350,14 @@ export default function Analytics() {
 
         <div className="bg-surface-container-lowest rounded-xl p-6 border border-l-error border-l-4 border-y border-r border-outline-variant/20">
            <div className="flex items-center justify-between mb-6">
-            <h3 className="font-title-lg font-bold text-primary">Risk Alerts</h3>
+            <h3 className="font-title-lg font-bold text-primary">Exam Eligibility Alerts</h3>
             <AlertTriangle className="text-error w-6 h-6 fill-current" />
           </div>
-          <p className="font-body-sm text-on-surface-variant mb-4">Courses below the 75% mandatory attendance threshold.</p>
+          <p className="font-body-sm text-on-surface-variant mb-4">Courses below the {EXAM_ELIGIBILITY_THRESHOLD}% mandatory attendance threshold for exam eligibility.</p>
           
           {riskCourses.length === 0 ? (
             <div className="bg-surface-container-low p-4 rounded-lg text-center text-on-surface-variant">
-              All your courses are above the 75% threshold. Great job!
+              All your courses are above the {EXAM_ELIGIBILITY_THRESHOLD}% threshold. You are eligible for exams!
             </div>
           ) : (
           <div className="space-y-4">
@@ -332,7 +371,7 @@ export default function Analytics() {
               <div className="w-full bg-surface-dim rounded-full h-2 mb-1 overflow-hidden">
                 <div className="bg-error h-full rounded-full" style={{ width: `${c.pct}%` }}></div>
               </div>
-              <p className="font-label-md text-error text-right mt-1">Requires attention</p>
+              <p className="font-label-md text-error text-right mt-1">Exam eligibility at risk</p>
             </div>
             ))}
           </div>

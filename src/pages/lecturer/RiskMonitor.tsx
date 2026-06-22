@@ -80,7 +80,7 @@ export default function RiskMonitor() {
       if (seen.has(sid)) continue;
       seen.add(sid);
 
-      const att = attendanceData[sid] || { present: 0, total: 0 };
+      const att = (attendanceData[sid] || { present: 0, total: 0 }) as any;
       const pct = att.total > 0 ? Math.round((att.present / att.total) * 100) : 100;
       if (pct < 75) {
         const student = allUsers.find(u => u.uid === sid);

@@ -439,10 +439,9 @@ export default function LiveSession() {
             style={{
               userSelect: 'none',
               WebkitUserSelect: 'none',
-              WebkitUserDrag: 'none',
               MozUserSelect: 'none',
               msUserSelect: 'none',
-            }}
+            } as React.CSSProperties}
           >
 
             {/* Header */}
@@ -477,8 +476,7 @@ export default function LiveSession() {
               style={{
                 userSelect: 'none',
                 WebkitUserSelect: 'none',
-                WebkitUserDrag: 'none',
-              }}
+              } as React.CSSProperties}
             >
               {/* Watermark overlay */}
               {isOpen && totpToken && (
@@ -517,7 +515,7 @@ export default function LiveSession() {
                   size={256}
                   className="w-full h-full"
                   includeMargin={false}
-                  style={{ userSelect: 'none', WebkitUserDrag: 'none' }}
+                  style={{ userSelect: 'none' } as React.CSSProperties}
                 />
               ) : (
                 <div className="flex flex-col items-center gap-3 text-on-surface-variant">

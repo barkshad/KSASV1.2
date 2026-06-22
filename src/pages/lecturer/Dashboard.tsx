@@ -150,7 +150,7 @@ export default function LecturerDashboard() {
   }
 
   const enrolledCount = activeSession?.enrolledCount || 0;
-  const attendancePct = Math.min(100, Math.round((attendanceCount / enrolledCount) * 100));
+  const attendancePct = enrolledCount > 0 ? Math.min(100, Math.round((attendanceCount / enrolledCount) * 100)) : 0;
 
   const weeklyTrend = useMemo(() => {
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

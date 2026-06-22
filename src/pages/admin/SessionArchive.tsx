@@ -360,7 +360,7 @@ export default function SessionArchive() {
               {[
                 { label: 'Present', value: detailSession.present, color: 'var(--success)' },
                 { label: 'Absent', value: detailSession.absent, color: 'var(--danger)' },
-                { label: 'Late', value: detailSession.late || 0, color: 'var(--warning)' },
+                { label: 'Late', value: (detailSession as any).late || 0, color: 'var(--warning)' },
                 { label: 'Rate', value: `${detailSession.attendanceRate}%`, color: getRateColor(detailSession.attendanceRate) },
               ].map(s => (
                 <div key={s.label} style={{ textAlign: 'center' }}>
