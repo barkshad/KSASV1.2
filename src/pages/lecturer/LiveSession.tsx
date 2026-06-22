@@ -20,7 +20,7 @@ import toast from 'react-hot-toast';
 import { db, doc, collection, onSnapshot, updateDoc } from '../../lib/firebase';
 import { collections, archiveSession, closeSession } from '../../lib/db';
 import { getCurrentTOTP } from '../../lib/totp';
-import { buildAttendanceCsv, downloadCsv, formatTimeIn, AttendanceCsvRow } from '../../lib/csvExport';
+import { buildAttendanceCsv, downloadCsv, formatTimeIn, formatTimestampExact, AttendanceCsvRow } from '../../lib/csvExport';
 
 const QR_DISPLAY_INTERVAL_MS = 5_000;
 const TOTP_PERIOD_S = 5;
@@ -95,7 +95,10 @@ export default function LiveSession() {
         if (snap.exists()) setSessionData({ id: snap.id, ...snap.data() });
         setLoading(false);
       },
-      () => setLoading(false)
+      (err) => {
+        console.error('Session listener error:', err);
+        setLoading(false);
+      }
     );
 
     const unsubAtt = onSnapshot(
@@ -104,6 +107,9 @@ export default function LiveSession() {
         const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
         list.sort((a: any, b: any) => (b.timestamp?.toMillis?.() ?? 0) - (a.timestamp?.toMillis?.() ?? 0));
         setAttendance(list);
+      },
+      (err) => {
+        console.error('Attendance listener error:', err);
       }
     );
 
@@ -113,12 +119,21 @@ export default function LiveSession() {
   const refreshQR = useCallback(() => {
     if (!sessionData?.totpSecret) return;
     const token = getCurrentTOTP(sessionData.totpSecret);
+    const genTime = Date.now();
     setTotpToken(token);
     setQrKey((k) => k + 1);
     setCountdown(5);
     setQrFlash(true);
     setTimeout(() => setQrFlash(false), 300);
-  }, [sessionData?.totpSecret]);
+
+    console.log('[QR] Token refreshed', {
+      generatedAt: new Date(genTime).toISOString(),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      tokenPreview: token.substring(0, 2) + '****',
+      period: '5s',
+      sessionId,
+    });
+  }, [sessionData?.totpSecret, sessionId]);
 
   useEffect(() => {
     if (!sessionData?.totpSecret || sessionData?.status !== 'open') return;
@@ -163,21 +178,24 @@ export default function LiveSession() {
       return;
     }
 
-    const rows: AttendanceCsvRow[] = attendance.map((a: any) => ({
-      studentId: a.studentId || '',
-      studentName: a.studentName || '',
-      studentEmail: a.studentEmail || '',
-      regNumber: a.studentId || '',
-      status: a.status || 'present',
-      date: sessionData.date || '',
-      timeIn: formatTimeIn(a.timestamp),
-      courseCode: sessionData.courseCode || '',
-      courseName: sessionData.courseName || '',
-      room: sessionData.room || '',
-      lecturerName: sessionData.lecturerName || '',
-      topicOfDay: sessionData.topicOfDay || '',
-      deviceFingerprint: a.deviceFingerprint || '',
-    }));
+    const rows: AttendanceCsvRow[] = attendance.map((a: any) => {
+      const ts = formatTimestampExact(a.timestamp);
+      return {
+        studentId: a.studentId || '',
+        studentName: a.studentName || '',
+        studentEmail: a.studentEmail || '',
+        regNumber: a.studentId || '',
+        status: a.status || 'present',
+        date: ts.date,
+        timeIn: ts.time,
+        courseCode: sessionData.courseCode || '',
+        courseName: sessionData.courseName || '',
+        room: sessionData.room || '',
+        lecturerName: sessionData.lecturerName || '',
+        topicOfDay: sessionData.topicOfDay || '',
+        deviceFingerprint: a.deviceFingerprint || '',
+      };
+    });
 
     const csv = buildAttendanceCsv(rows);
     const safeCourse = (sessionData.courseCode || 'session').replace(/[^a-zA-Z0-9]/g, '_');

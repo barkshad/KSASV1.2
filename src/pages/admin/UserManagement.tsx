@@ -5,7 +5,8 @@
  */
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Upload, Download, Search, Plus, Loader2, Users, UserCheck, Shield, X } from 'lucide-react';
+import { Upload, Download, Search, Plus, Loader2, Users, UserCheck, Shield, UserPlus, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Papa from 'papaparse';
 import { hashPassword } from '../../lib/auth';
@@ -37,6 +38,7 @@ function generateInitialPassword(): string {
 type RoleFilter = 'student' | 'lecturer' | 'admin';
 
 export default function UserManagement() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);

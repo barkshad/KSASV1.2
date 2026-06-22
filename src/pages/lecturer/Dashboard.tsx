@@ -1,6 +1,6 @@
 import React, { useMemo, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Radio, StopCircle, QrCode, AlertCircle, FileBarChart, Calendar, Loader2, Bookmark, DownloadCloud, CheckCircle, X, TrendingUp, Star } from 'lucide-react';
+import { Radio, StopCircle, QrCode, AlertCircle, FileBarChart, Calendar, Loader2, Bookmark, DownloadCloud, CheckCircle, X, TrendingUp, Star, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
@@ -11,13 +11,39 @@ import { useFirestoreRealtimeCollection } from '../../hooks/useFirestoreRealtime
 import { db, collection, addDoc, serverTimestamp, doc, updateDoc, onSnapshot, getDocs, query, where } from '../../lib/firebase';
 import { collections, archiveSession } from '../../lib/db';
 import { generateSessionTOTPSecret } from '../../lib/totp';
-import { exportSessionCSV } from '../../lib/csvExport';
+import { exportSessionCSV, buildAttendanceCsv, formatTimestampExact } from '../../lib/csvExport';
+import { CAMPUSES, type CampusConfig } from '../../lib/campuses';
 
 export default function LecturerDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
   const { data: allSessions, loading: loadingSessions } = useFirestoreRealtimeCollection(collections.SESSIONS);
+  const { data: allCourses } = useFirestoreRealtimeCollection(collections.COURSES);
+  const { data: allEnrollments } = useFirestoreRealtimeCollection(collections.ENROLLMENTS);
+
+  const myCourses = useMemo(() => {
+    return (allCourses || []).filter(c => c.lecturer === user?.uid);
+  }, [allCourses, user]);
+
+  const myEnrollments = useMemo(() => {
+    const myCourseCodes = new Set(myCourses.map(c => c.code));
+    return (allEnrollments || []).filter(e => myCourseCodes.has(e.courseCode));
+  }, [allEnrollments, myCourses]);
+
+  const enrollmentsByCourse = useMemo(() => {
+    const grouped = new Map<string, { code: string; name: string; students: typeof myEnrollments }>();
+    for (const c of myCourses) {
+      grouped.set(c.code, { code: c.code, name: c.name, students: [] });
+    }
+    for (const e of myEnrollments) {
+      const group = grouped.get(e.courseCode);
+      if (group) {
+        group.students.push(e);
+      }
+    }
+    return Array.from(grouped.values()).filter(g => g.students.length > 0);
+  }, [myCourses, myEnrollments]);
 
   const activeSession = useMemo(() => {
     return (allSessions || []).find(s => s.lecturerId === user?.uid && s.status === 'open');
@@ -28,6 +54,7 @@ export default function LecturerDashboard() {
   const [ending, setEnding] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [endResult, setEndResult] = useState<{ session: any; attendance: any[] } | null>(null);
+  const [selectedCampusId, setSelectedCampusId] = useState<string>('');
 
   useEffect(() => {
     if (!activeSession?.id) {
@@ -44,6 +71,34 @@ export default function LecturerDashboard() {
 
     return () => unsubscribe();
   }, [activeSession?.id]);
+
+  const handleCampusChange = (campusId: string) => {
+    setSelectedCampusId(campusId);
+    const campus = CAMPUSES.find(c => c.id === campusId);
+    if (!campus) return;
+
+    const form = document.querySelector('form[name="sessionForm"]') as HTMLFormElement;
+    if (!form) return;
+
+    const setField = (name: string, value: string) => {
+      const el = form.elements.namedItem(name) as HTMLInputElement | null;
+      if (el) {
+        el.value = value;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    };
+
+    setField('campusLat', String(campus.latitude));
+    setField('campusLng', String(campus.longitude));
+    setField('allowedRadiusMeters', String(campus.defaultRadiusMeters));
+
+    const gpsCheck = form.elements.namedItem('requireGps') as HTMLInputElement | null;
+    if (gpsCheck) gpsCheck.checked = campus.antiFraud.gpsProximityCheck;
+
+    const ipCheck = form.elements.namedItem('requireIpRange') as HTMLInputElement | null;
+    if (ipCheck) ipCheck.checked = campus.antiFraud.ipValidation;
+  };
 
   const handleStartSession = async (courseCode: string, courseName: string, room: string, topicOfDay: string = '', securityConfig?: {
     requireGps?: boolean;
@@ -111,17 +166,26 @@ export default function LecturerDashboard() {
       const snapshot = await getDocs(attCollRef);
       const records = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      // Build CSV data for archive
-      const headers = ['Student Name','Registration Number','Check-In Time','Status','Device Fingerprint'];
-      const rows = records.map((r: any) => [
-        r.studentName || '',
-        r.studentId || '',
-        r.timestamp?.toDate ? r.timestamp.toDate().toLocaleString() : '—',
-        r.status || 'PRESENT',
-        r.deviceFingerprint || 'N/A',
-      ]);
-      const escape = (cell: string) => `"${String(cell).replace(/"/g, '""')}"`;
-      const csvStr = [headers, ...rows].map(row => row.map(escape).join(',')).join('\n');
+      // Build CSV data for archive with exact date/time
+      const archiveRows = records.map((r: any) => {
+        const ts = formatTimestampExact(r.timestamp);
+        return {
+          studentId: r.studentId || '',
+          studentName: r.studentName || '',
+          studentEmail: r.studentEmail || '',
+          regNumber: r.studentId || '',
+          status: r.status || 'present',
+          date: ts.date,
+          timeIn: ts.time,
+          courseCode: activeSession.courseCode || '',
+          courseName: activeSession.courseName || '',
+          room: activeSession.room || '',
+          lecturerName: activeSession.lecturerName || '',
+          topicOfDay: activeSession.topicOfDay || '',
+          deviceFingerprint: r.deviceFingerprint || '',
+        };
+      });
+      const csvStr = buildAttendanceCsv(archiveRows);
 
       await updateDoc(doc(db, collections.SESSIONS, activeSession.id), { status: 'closed' });
       await archiveSession(activeSession.id, csvStr);
@@ -325,6 +389,7 @@ export default function LecturerDashboard() {
                 Start New Session
               </h3>
               <form
+                name="sessionForm"
                 onSubmit={(e) => {
                   e.preventDefault();
                   const fd = new FormData(e.currentTarget);
@@ -360,7 +425,7 @@ export default function LecturerDashboard() {
                     <input name="name" required placeholder="e.g. Data Structures & Algorithms" className="input-base" />
                   </div>
                    <div className="form-group">
-                    <label className="font-label-md uppercase tracking-widest" style={{ color: 'var(--color-text-tertiary)' }}>Topic of Day</label>
+                    <label className="form-label">Topic of Day</label>
                     <input
                       name="topic"
                       maxLength={120}
@@ -385,6 +450,26 @@ export default function LecturerDashboard() {
                       }}
                     />
                     <div style={{ fontFamily: 'Outfit, sans-serif', fontSize: '11px', color: 'var(--text-tertiary)', textAlign: 'right', marginTop: '4px' }}>0 / 120</div>
+                  </div>
+
+                  {/* Campus Selector */}
+                  <div className="form-group">
+                    <label className="form-label">Campus</label>
+                    <select
+                      name="campusId"
+                      value={selectedCampusId}
+                      onChange={(e) => handleCampusChange(e.target.value)}
+                      className="input-base cursor-pointer"
+                      style={{ fontFamily: 'Outfit, sans-serif', fontSize: '14px' }}
+                    >
+                      <option value="">Select a campus...</option>
+                      {CAMPUSES.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                    <p style={{ fontFamily: 'Outfit, sans-serif', fontSize: '11px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+                      GPS coordinates, radius, and anti-fraud settings auto-fill on selection.
+                    </p>
                   </div>
 
                   {/* Security Settings */}
@@ -514,14 +599,14 @@ export default function LecturerDashboard() {
           </h3>
           <div className="grid grid-cols-2 gap-3 flex-1">
             {[
-              { icon: AlertCircle, label: 'Notify Absentees', bg: 'var(--kabu-maroon-tint)', color: 'var(--kabu-maroon)' },
-              { icon: FileBarChart, label: 'Generate Report', bg: 'var(--bg-elevated)', color: 'var(--text-secondary)' },
-              { icon: Calendar, label: 'Schedule', bg: 'var(--success-bg)', color: 'var(--success)' },
-              { icon: AlertCircle, label: 'Risk Monitor', bg: 'var(--danger-bg)', color: 'var(--danger)' },
-            ].map((action, i) => (
+              { icon: AlertCircle, label: 'Notify Absentees', bg: 'var(--kabu-maroon-tint)', color: 'var(--kabu-maroon)', onClick: () => { if (!activeSession) { toast('No active session to notify absentees from.', { icon: '📋' }); return; } toast.success('Absentee notifications queued for ' + activeSession.courseCode); } },
+              { icon: FileBarChart, label: 'Generate Report', bg: 'var(--bg-elevated)', color: 'var(--text-secondary)', onClick: () => navigate('/lecturer/reports') },
+              { icon: Calendar, label: 'Schedule', bg: 'var(--success-bg)', color: 'var(--success)', onClick: () => toast('Session scheduling coming soon.', { icon: '📅' }) },
+              { icon: AlertCircle, label: 'Risk Monitor', bg: 'var(--danger-bg)', color: 'var(--danger)', onClick: () => navigate('/lecturer/risk') },
+            ].map((action) => (
               <button
                 key={action.label}
-                onClick={i === 3 ? () => navigate('/lecturer/risk') : undefined}
+                onClick={action.onClick}
                 className="flex flex-col items-center justify-center p-4 text-center transition-colors"
                 style={{
                   background: action.bg,
@@ -616,6 +701,73 @@ export default function LecturerDashboard() {
 
           <AnalyticsSection sessions={allSessions} userId={user?.uid} />
         </div>
+
+        {/* Enrolled Students */}
+        {enrollmentsByCourse.length > 0 && (
+          <div
+            className="md:col-span-12"
+            style={{
+              padding: '24px',
+              background: 'var(--bg-surface)',
+              borderRadius: 'var(--radius-lg)',
+              border: '0.5px solid var(--bg-border)',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 0 0 0.5px var(--bg-border)',
+            }}
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <Users className="w-5 h-5" style={{ color: 'var(--gold-primary)' }} />
+              <h3 style={{ fontFamily: 'var(--font-editorial)', fontSize: '20px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+                Enrolled Students
+              </h3>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-tertiary)', marginLeft: '8px' }}>
+                {myEnrollments.length} total across {enrollmentsByCourse.length} course{enrollmentsByCourse.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+            <div className="space-y-4">
+              {enrollmentsByCourse.map((group) => (
+                <div
+                  key={group.code}
+                  style={{
+                    padding: '16px',
+                    background: 'var(--bg-elevated)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '0.5px solid var(--bg-border)',
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 500, color: 'var(--gold-primary)' }}>{group.code}</span>
+                      <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-secondary)' }}>{group.name}</span>
+                    </div>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-tertiary)' }}>{group.students.length} students</span>
+                  </div>
+                  <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr>
+                          <th style={{ fontFamily: 'var(--font-body)', fontSize: '10px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-tertiary)', textAlign: 'left', padding: '6px 8px', borderBottom: '0.5px solid var(--bg-border)' }}>Student</th>
+                          <th style={{ fontFamily: 'var(--font-body)', fontSize: '10px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-tertiary)', textAlign: 'left', padding: '6px 8px', borderBottom: '0.5px solid var(--bg-border)' }}>ID</th>
+                          <th style={{ fontFamily: 'var(--font-body)', fontSize: '10px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-tertiary)', textAlign: 'left', padding: '6px 8px', borderBottom: '0.5px solid var(--bg-border)' }}>Enrolled</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {group.students.map((e) => (
+                          <tr key={e.id} style={{ borderBottom: '0.5px solid var(--bg-border)' }}>
+                            <td style={{ padding: '8px', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-primary)' }}>{e.studentName || '—'}</td>
+                            <td style={{ padding: '8px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-tertiary)' }}>{e.studentId}</td>
+                            <td style={{ padding: '8px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+                              {e.enrolledAt ? new Date(e.enrolledAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
 
@@ -748,7 +900,6 @@ export default function LecturerDashboard() {
 function AnalyticsSection({ sessions, userId }: { sessions: any[]; userId?: string }) {
   const [feedbackList, setFeedbackList] = useState<any[]>([]);
   const [loadingFeedback, setLoadingFeedback] = useState(true);
-  const [allSessionsForAvg, setAllSessionsForAvg] = useState<any[]>([]);
 
   useEffect(() => {
     if (!userId) return;
@@ -766,15 +917,6 @@ function AnalyticsSection({ sessions, userId }: { sessions: any[]; userId?: stri
         setFeedbackList([]);
       } finally {
         setLoadingFeedback(false);
-      }
-    })();
-    // Fetch all sessions for university average comparison
-    (async () => {
-      try {
-        const snap = await getDocs(collection(db, collections.SESSIONS));
-        setAllSessionsForAvg(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-      } catch {
-        setAllSessionsForAvg([]);
       }
     })();
   }, [userId]);
@@ -825,10 +967,10 @@ function AnalyticsSection({ sessions, userId }: { sessions: any[]; userId?: stri
   }, [feedbackList]);
 
   const universityAvgRate = useMemo(() => {
-    if (allSessionsForAvg.length === 0) return 0;
+    if (!sessions || sessions.length === 0) return 0;
     let totalRate = 0;
     let count = 0;
-    for (const s of allSessionsForAvg) {
+    for (const s of sessions) {
       const enrolled = s.enrolledCount || 0;
       if (enrolled === 0) continue;
       const attended = s.attendanceCount || 0;
@@ -836,7 +978,7 @@ function AnalyticsSection({ sessions, userId }: { sessions: any[]; userId?: stri
       count++;
     }
     return count > 0 ? Math.round(totalRate / count) : 0;
-  }, [allSessionsForAvg]);
+  }, [sessions]);
 
   const effectivenessScore = useMemo(() => {
     if (totalSessions === 0) return 0;

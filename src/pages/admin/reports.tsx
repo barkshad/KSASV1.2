@@ -9,7 +9,7 @@ import { Download, Loader2, FileText, Filter, Calendar, RefreshCw } from 'lucide
 import toast from 'react-hot-toast';
 import { db, collection, getDocs } from '../../lib/firebase';
 import { collections } from '../../lib/db';
-import { buildAttendanceCsv, downloadCsv, formatTimeIn, AttendanceCsvRow } from '../../lib/csvExport';
+import { buildAttendanceCsv, downloadCsv, formatTimeIn, formatTimestampExact, AttendanceCsvRow } from '../../lib/csvExport';
 
 interface FlatRecord extends AttendanceCsvRow {
   sessionId: string;
@@ -33,6 +33,7 @@ export default function Reports() {
         const attSnap = await getDocs(collection(db, `${collections.SESSIONS}/${sDoc.id}/attendance`));
         attSnap.forEach((aDoc) => {
           const a = aDoc.data();
+          const ts = formatTimestampExact(a.timestamp);
           flat.push({
             sessionId: sDoc.id,
             studentId: a.studentId || '',
@@ -40,8 +41,8 @@ export default function Reports() {
             studentEmail: a.studentEmail || '',
             regNumber: a.regNumber || a.studentId || '',
             status: a.status || 'present',
-            date: session.date || '',
-            timeIn: formatTimeIn(a.timestamp),
+            date: ts.date,
+            timeIn: ts.time,
             courseCode: session.courseCode || '',
             courseName: session.courseName || '',
             room: session.room || '',

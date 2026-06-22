@@ -17,9 +17,11 @@ import LecturerDashboard from './pages/lecturer/Dashboard';
 import LecturerCourseManagement from './pages/lecturer/CourseManagement';
 import LecturerLiveSession from './pages/lecturer/LiveSession';
 import LecturerRiskMonitor from './pages/lecturer/RiskMonitor';
+import LecturerReports from './pages/lecturer/Reports';
 
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminUserManagement from './pages/admin/UserManagement';
+import AdminCreateUser from './pages/admin/CreateUser';
 import AdminCourseManagement from './pages/admin/CourseManagement';
 import AdminSessionArchive from './pages/admin/SessionArchive';
 import AdminAnalytics from './pages/admin/Analytics';
@@ -52,13 +54,14 @@ function App() {
           <Route path="live" element={<LecturerLiveSession />} />
           <Route path="risk" element={<LecturerRiskMonitor />} />
           <Route path="profile" element={<StudentProfile />} />
-          <Route path="reports" element={<LecturerDashboard />} /> {/* Fallback */}
+          <Route path="reports" element={<LecturerReports />} />
           <Route path="calendar" element={<LecturerDashboard />} /> {/* Fallback */}
         </Route>
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AppLayout role="admin" />}>
           <Route index element={<AdminDashboard />} />
+          <Route path="users/create" element={<AdminCreateUser />} />
           <Route path="users" element={<AdminUserManagement />} />
           <Route path="courses" element={<AdminCourseManagement />} />
           <Route path="archive" element={<AdminSessionArchive />} />

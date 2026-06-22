@@ -67,6 +67,14 @@ export default function CheckIn() {
     setLoading(true);
     setError(null);
     setSecurityWarnings([]);
+
+    const scanTimestamp = Date.now();
+    console.log('[CheckIn] QR scan initiated', {
+      scanTime: new Date(scanTimestamp).toISOString(),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      deviceFingerprint,
+    });
+
     try {
       if (!qrData.startsWith('ksas://attend')) {
         throw new Error('Invalid QR code. Please scan the classroom QR code.');
@@ -86,12 +94,42 @@ export default function CheckIn() {
       if (!sessionDoc.exists()) throw new Error('Session not found or has ended.');
       const sessionData = sessionDoc.data();
 
-      if (sessionData.status !== 'open') throw new Error('This session is no longer accepting check-ins.');
+      const sessionStatus = sessionData.status;
+      const sessionStartTime = sessionData.startTime;
+      const sessionEndTime = sessionData.endTime;
+      const hasTotpSecret = !!sessionData.totpSecret;
 
-      // 2. Validate TOTP token
-      if (!validateTOTP(sessionData.totpSecret, token)) {
+      console.log('[CheckIn] Session data fetched', {
+        sessionId,
+        status: sessionStatus,
+        startTime: sessionStartTime,
+        endTime: sessionEndTime,
+        hasTotpSecret,
+        createdAt: sessionData.createdAt?.toDate?.()?.toISOString?.() ?? 'N/A',
+      });
+
+      if (sessionStatus !== 'open') throw new Error('This session is no longer accepting check-ins.');
+
+      // 2. Validate TOTP token with full logging
+      console.log('[CheckIn] Starting TOTP validation', {
+        tokenReceived: token,
+        totpSecretPresent: hasTotpSecret,
+      });
+
+      const totpValid = validateTOTP(sessionData.totpSecret, token);
+
+      if (!totpValid) {
+        console.error('[CheckIn] TOTP validation failed — QR rejected', {
+          sessionId,
+          tokenReceived: token,
+          scanTime: new Date(scanTimestamp).toISOString(),
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          deviceTime: new Date().toISOString(),
+        });
         throw new Error('QR code has expired. Please ask your lecturer to refresh the QR code and try again.');
       }
+
+      console.log('[CheckIn] TOTP validation passed — proceeding to security checks');
 
       // 3. Collect security context (GPS + IP in parallel)
       const [coordinates, ipAddress] = await Promise.all([

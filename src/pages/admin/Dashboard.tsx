@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { Shield, Users, UserPlus, Activity, Info, Star, Loader2 } from 'lucide-react';
+import { Shield, Users, UserPlus, Activity, Info, Star, Loader2, GraduationCap, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useFirestoreRealtimeCollection } from '../../hooks/useFirestoreRealtime';
 import { db, collection, getDocs, query, orderBy, limit } from '../../lib/firebase';
@@ -11,11 +11,56 @@ export default function AdminDashboard() {
   const { data: users } = useFirestoreRealtimeCollection(collections.USERS);
   const { data: courses } = useFirestoreRealtimeCollection(collections.COURSES);
   const { data: sessions } = useFirestoreRealtimeCollection(collections.SESSIONS);
+  const { data: enrollments } = useFirestoreRealtimeCollection(collections.ENROLLMENTS);
 
   const totalStudents = useMemo(() => users.filter(u => u.role === 'student').length, [users]);
   const totalLecturers = useMemo(() => users.filter(u => u.role === 'lecturer').length, [users]);
   
   const activeSessions = useMemo(() => sessions.filter(s => s.status === 'open').length, [sessions]);
+
+  const totalEnrolled = useMemo(() => enrollments.length, [enrollments]);
+
+  const recentlyEnrolled = useMemo(() => {
+    return [...enrollments]
+      .sort((a, b) => {
+        const ta = a.enrolledAt ? new Date(a.enrolledAt).getTime() : 0;
+        const tb = b.enrolledAt ? new Date(b.enrolledAt).getTime() : 0;
+        return tb - ta;
+      })
+      .slice(0, 8);
+  }, [enrollments]);
+
+  const enrollmentsByDepartment = useMemo(() => {
+    const grouped = new Map<string, { department: string; courses: Map<string, { code: string; name: string; count: number }> }>();
+    for (const e of enrollments) {
+      const course = courses.find(c => c.code === e.courseCode);
+      const dept = course?.department || 'Unassigned';
+      if (!grouped.has(dept)) {
+        grouped.set(dept, { department: dept, courses: new Map() });
+      }
+      const deptEntry = grouped.get(dept)!;
+      if (!deptEntry.courses.has(e.courseCode)) {
+        deptEntry.courses.set(e.courseCode, { code: e.courseCode, name: course?.name || e.courseCode, count: 0 });
+      }
+      deptEntry.courses.get(e.courseCode)!.count++;
+    }
+    return Array.from(grouped.values()).sort((a, b) => a.department.localeCompare(b.department));
+  }, [enrollments, courses]);
+
+  const todaySessions = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return sessions.filter(s => s.date === today);
+  }, [sessions]);
+
+  const todayAttendance = useMemo(() => {
+    let totalPresent = 0;
+    let totalEnrolledToday = 0;
+    for (const s of todaySessions) {
+      totalEnrolledToday += s.enrolledCount || 0;
+      totalPresent += s.attendanceCount || 0;
+    }
+    return { totalPresent, totalEnrolledToday, rate: totalEnrolledToday > 0 ? Math.round((totalPresent / totalEnrolledToday) * 100) : 0 };
+  }, [todaySessions]);
 
   const [recentFeedback, setRecentFeedback] = useState<any[]>([]);
   const [loadingFeedback, setLoadingFeedback] = useState(true);
@@ -49,9 +94,10 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stat Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
         {[
           { label: 'Total Students', value: totalStudents, color: 'var(--kabu-maroon)' },
+          { label: 'Enrolled Students', value: totalEnrolled, color: 'var(--gold-primary)' },
           { label: 'Total Lecturers', value: totalLecturers, color: 'var(--kabu-maroon)' },
           { label: 'Active Courses', value: courses.length, color: 'var(--kabu-maroon)' },
           { label: 'Live Sessions', value: activeSessions, color: activeSessions > 0 ? 'var(--success)' : 'var(--kabu-maroon)' },
@@ -75,6 +121,137 @@ export default function AdminDashboard() {
           </div>
         ))}
       </div>
+
+      {/* Today's Attendance Stats */}
+      {todaySessions.length > 0 && (
+        <div
+          className="mb-8 p-6"
+          style={{
+            background: 'var(--bg-surface)',
+            border: '0.5px solid var(--bg-border)',
+            borderRadius: 'var(--radius-lg)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 0 0 0.5px var(--bg-border)',
+          }}
+        >
+          <h3 style={{ fontFamily: 'var(--font-editorial)', fontSize: '20px', color: 'var(--text-primary)', letterSpacing: '-0.01em', marginBottom: '16px' }}>
+            Today's Attendance
+          </h3>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-4 text-center" style={{ background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)' }}>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '24px', fontWeight: 500, color: 'var(--text-primary)' }}>{todaySessions.length}</p>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginTop: '4px' }}>Sessions Today</p>
+            </div>
+            <div className="p-4 text-center" style={{ background: 'var(--success-bg)', borderRadius: 'var(--radius-md)' }}>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '24px', fontWeight: 500, color: 'var(--success)' }}>{todayAttendance.totalPresent}</p>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginTop: '4px' }}>Present Today</p>
+            </div>
+            <div className="p-4 text-center" style={{ background: 'var(--bg-elevated)', borderRadius: 'var(--radius-md)' }}>
+              <p style={{ fontFamily: 'var(--font-mono)', fontSize: '24px', fontWeight: 500, color: todayAttendance.rate >= 75 ? 'var(--success)' : todayAttendance.rate >= 50 ? 'var(--warning)' : 'var(--danger)' }}>
+                {todayAttendance.rate}%
+              </p>
+              <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginTop: '4px' }}>Attendance Rate</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recently Enrolled Students */}
+      {recentlyEnrolled.length > 0 && (
+        <div
+          className="mb-8 p-6"
+          style={{
+            background: 'var(--bg-surface)',
+            border: '0.5px solid var(--bg-border)',
+            borderRadius: 'var(--radius-lg)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 0 0 0.5px var(--bg-border)',
+          }}
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <GraduationCap className="w-5 h-5" style={{ color: 'var(--gold-primary)' }} />
+            <h3 style={{ fontFamily: 'var(--font-editorial)', fontSize: '20px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+              Recently Enrolled Students
+            </h3>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-tertiary)', marginLeft: '8px' }}>
+              {totalEnrolled} total
+            </span>
+          </div>
+          <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-tertiary)', textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid var(--bg-border)' }}>Student</th>
+                  <th style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-tertiary)', textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid var(--bg-border)' }}>Course</th>
+                  <th style={{ fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-tertiary)', textAlign: 'left', padding: '8px 12px', borderBottom: '1px solid var(--bg-border)' }}>Enrolled</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentlyEnrolled.map((e) => (
+                  <tr key={e.id} style={{ borderBottom: '0.5px solid var(--bg-border)' }}>
+                    <td style={{ padding: '10px 12px', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-primary)' }}>
+                      {e.studentName || '—'}
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-tertiary)', marginLeft: '6px' }}>
+                        {e.studentId}
+                      </span>
+                    </td>
+                    <td style={{ padding: '10px 12px', fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--gold-primary)' }}>{e.courseCode}</td>
+                    <td style={{ padding: '10px 12px', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-tertiary)' }}>
+                      {e.enrolledAt ? new Date(e.enrolledAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Enrolled Students by Department */}
+      {enrollmentsByDepartment.length > 0 && (
+        <div
+          className="mb-8 p-6"
+          style={{
+            background: 'var(--bg-surface)',
+            border: '0.5px solid var(--bg-border)',
+            borderRadius: 'var(--radius-lg)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.4), 0 0 0 0.5px var(--bg-border)',
+          }}
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <BookOpen className="w-5 h-5" style={{ color: 'var(--gold-primary)' }} />
+            <h3 style={{ fontFamily: 'var(--font-editorial)', fontSize: '20px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+              Enrolled Students by Department
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {enrollmentsByDepartment.map((dept) => (
+              <div
+                key={dept.department}
+                style={{
+                  padding: '16px',
+                  background: 'var(--bg-elevated)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '0.5px solid var(--bg-border)',
+                }}
+              >
+                <h4 style={{ fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>
+                  {dept.department}
+                </h4>
+                <div className="space-y-2">
+                  {Array.from(dept.courses.values()).map((c) => (
+                    <div key={c.code} className="flex items-center justify-between" style={{ padding: '6px 0', borderBottom: '0.5px solid var(--bg-border)' }}>
+                      <div>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--gold-primary)' }}>{c.code}</span>
+                        <span style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-secondary)', marginLeft: '6px' }}>{c.name}</span>
+                      </div>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-primary)', fontWeight: 500 }}>{c.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">

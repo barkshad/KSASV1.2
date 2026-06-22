@@ -29,9 +29,37 @@ export function formatTimeIn(timestamp: any): string {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
+      hour12: false,
     });
   } catch {
     return '—';
+  }
+}
+
+export function formatDateExact(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+export function formatTimeExact(date: Date): string {
+  const h = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  const s = String(date.getSeconds()).padStart(2, '0');
+  return `${h}:${min}:${s}`;
+}
+
+export function formatTimestampExact(timestamp: any): { date: string; time: string } {
+  if (!timestamp) return { date: '—', time: '—' };
+  try {
+    const date =
+      typeof timestamp?.toDate === 'function'
+        ? timestamp.toDate()
+        : new Date(timestamp);
+    return { date: formatDateExact(date), time: formatTimeExact(date) };
+  } catch {
+    return { date: '—', time: '—' };
   }
 }
 
@@ -102,22 +130,29 @@ export function downloadCsv(
 }
 
 export function exportSessionCSV(session: any, attendanceRecords: any[]): void {
-  const headers = ['Student Name', 'Registration Number', 'Check-In Time', 'Status', 'Device Fingerprint'];
+  const rows: AttendanceCsvRow[] = attendanceRecords.map((r: any) => {
+    const ts = formatTimestampExact(r.timestamp);
+    return {
+      studentId: r.studentId || '',
+      studentName: r.studentName || '',
+      studentEmail: r.studentEmail || '',
+      regNumber: r.studentId || '',
+      status: r.status || 'present',
+      date: ts.date,
+      timeIn: ts.time,
+      courseCode: session.courseCode || '',
+      courseName: session.courseName || '',
+      room: session.room || '',
+      lecturerName: session.lecturerName || '',
+      topicOfDay: session.topicOfDay || '',
+      deviceFingerprint: r.deviceFingerprint || '',
+    };
+  });
 
-  const rows = attendanceRecords.map((r: any) => [
-    r.studentName || '',
-    r.studentId || '',
-    r.checkInTime ? new Date(r.checkInTime).toLocaleString() : (r.timestamp?.toDate ? r.timestamp.toDate().toLocaleString() : '—'),
-    r.status || 'PRESENT',
-    r.deviceFingerprint || 'N/A',
-  ]);
-
-  const escape = (cell: string) => `"${String(cell).replace(/"/g, '""')}"`;
-
-  const csv = [headers, ...rows].map(row => row.map(escape).join(',')).join('\n');
+  const csv = buildAttendanceCsv(rows);
 
   const safeCourse = (session.courseName || 'session').replace(/[^a-zA-Z0-9]/g, '_');
-  const safeDate = (session.date || new Date().toISOString().split('T')[0]);
+  const safeDate = (session.date || formatDateExact(new Date()));
   const sessionId = (session.id || '').slice(0, 8);
   const filename = `KSAS_${safeCourse}_${safeDate}_${sessionId}.csv`;
 

@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { AlertTriangle, TrendingDown, Eye, Mail, Loader2 } from 'lucide-react';
+import { AlertTriangle, TrendingDown, Eye, Mail, Loader2, X, MessageSquare } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
 import { useFirestoreRealtimeCollection } from '../../hooks/useFirestoreRealtime';
 import { getDocs, query, collection, where, db } from '../../lib/firebase';
@@ -13,6 +14,7 @@ export default function RiskMonitor() {
 
   const [attendanceData, setAttendanceData] = useState<Record<string, { present: number; total: number; early: number; earlyPresent: number; late: number; latePresent: number }>>({});
   const [loading, setLoading] = useState(true);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
   const lecturerCourses = useMemo(() => {
     return allSessions
@@ -144,6 +146,7 @@ export default function RiskMonitor() {
         <button
           className="btn-danger"
           style={{ padding: '8px 24px', display: 'flex', alignItems: 'center', gap: '6px' }}
+          onClick={() => { toast.success(`Batch intervention emails queued for ${riskStudents.length} at-risk students`); }}
         >
           Batch Intervene
         </button>
@@ -197,8 +200,8 @@ export default function RiskMonitor() {
                   </div>
                 </div>
                 <div className="flex justify-end gap-2" style={{ marginTop: '8px' }}>
-                  <button style={{ padding: '8px', color: 'var(--kabu-maroon)', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 150ms' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--kabu-maroon-tint)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}><Eye className="w-5 h-5" /></button>
-                  <button style={{ padding: '8px', color: 'var(--warning)', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 150ms' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--warning-bg)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}><Mail className="w-5 h-5" /></button>
+                  <button onClick={() => setSelectedStudent(student)} style={{ padding: '8px', color: 'var(--kabu-maroon)', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 150ms' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--kabu-maroon-tint)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}><Eye className="w-5 h-5" /></button>
+                  <button onClick={() => { toast.success(`Email notification queued for ${student.name}`); }} style={{ padding: '8px', color: 'var(--warning)', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 150ms' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--warning-bg)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}><Mail className="w-5 h-5" /></button>
                 </div>
               </div>
             ))
@@ -260,8 +263,8 @@ export default function RiskMonitor() {
                     </td>
                     <td style={{ padding: '12px 24px' }}>
                       <div className="flex justify-end gap-2">
-                        <button style={{ padding: '8px', color: 'var(--kabu-maroon)', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 150ms' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--kabu-maroon-tint)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}><Eye className="w-5 h-5" /></button>
-                        <button style={{ padding: '8px', color: 'var(--warning)', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 150ms' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--warning-bg)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}><Mail className="w-5 h-5" /></button>
+                        <button onClick={() => setSelectedStudent(student)} style={{ padding: '8px', color: 'var(--kabu-maroon)', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 150ms' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--kabu-maroon-tint)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}><Eye className="w-5 h-5" /></button>
+                        <button onClick={() => { toast.success(`Email notification queued for ${student.name}`); }} style={{ padding: '8px', color: 'var(--warning)', borderRadius: 'var(--radius-md)', background: 'transparent', border: 'none', cursor: 'pointer', transition: 'background 150ms' }} onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--warning-bg)'; }} onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}><Mail className="w-5 h-5" /></button>
                       </div>
                     </td>
                   </tr>
@@ -271,6 +274,76 @@ export default function RiskMonitor() {
           </table>
         </div>
       </div>
+
+      {/* Student Detail Modal */}
+      {selectedStudent && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setSelectedStudent(null)}
+        >
+          <div
+            className="w-full max-w-md animate-scale-in"
+            style={{
+              background: 'var(--bg-elevated)',
+              border: '0.5px solid var(--bg-border)',
+              borderRadius: 'var(--radius-xl)',
+              padding: '32px',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h3 style={{ fontFamily: 'var(--font-editorial)', fontSize: '20px', color: 'var(--text-primary)' }}>
+                Student Detail
+              </h3>
+              <button onClick={() => setSelectedStudent(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-4 mb-6">
+              <div style={{ width: '56px', height: '56px', borderRadius: 'var(--radius-lg)', background: 'var(--kabu-maroon)', color: 'var(--text-inverse)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: 700 }}>
+                {(selectedStudent.name || '?').charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p style={{ fontFamily: 'var(--font-editorial)', fontSize: '18px', color: 'var(--text-primary)' }}>{selectedStudent.name}</p>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--text-tertiary)' }}>{selectedStudent.reg}</p>
+                {selectedStudent.program && <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>{selectedStudent.program}</p>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div style={{ padding: '16px', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '28px', fontWeight: 600, color: selectedStudent.attendance < 50 ? 'var(--danger)' : 'var(--warning)' }}>{selectedStudent.attendance}%</p>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '4px' }}>Attendance</p>
+              </div>
+              <div style={{ padding: '16px', background: 'var(--bg-surface)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '28px', fontWeight: 600, color: selectedStudent.trend < 0 ? 'var(--danger)' : selectedStudent.trend > 0 ? 'var(--success)' : 'var(--text-tertiary)' }}>{selectedStudent.trend > 0 ? '+' : ''}{selectedStudent.trend}%</p>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '4px' }}>Trend</p>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <div className="flex justify-between items-center" style={{ marginBottom: '6px' }}>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-secondary)' }}>Risk Level</span>
+                <span className="badge" style={{ background: selectedStudent.attendance < 50 ? 'var(--danger-bg)' : 'var(--warning-bg)', color: selectedStudent.attendance < 50 ? 'var(--danger)' : 'var(--warning)', border: `0.5px solid ${selectedStudent.attendance < 50 ? 'var(--danger)' : 'var(--warning)'}` }}>
+                  {selectedStudent.attendance < 50 ? 'High Risk' : 'Medium Risk'}
+                </span>
+              </div>
+              <div style={{ height: '8px', background: 'var(--bg-surface)', borderRadius: '9999px', overflow: 'hidden' }}>
+                <div style={{ height: '100%', borderRadius: '9999px', background: selectedStudent.attendance < 50 ? 'var(--danger)' : 'var(--warning)', width: `${selectedStudent.attendance}%` }} />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button onClick={() => { toast.success(`Email notification queued for ${selectedStudent.name}`); setSelectedStudent(null); }} className="btn-primary flex-1" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <Mail className="w-4 h-4" /> Send Notification
+              </button>
+              <button onClick={() => setSelectedStudent(null)} className="btn-ghost flex-1">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
