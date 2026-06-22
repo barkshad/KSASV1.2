@@ -1,6 +1,6 @@
 import { db, collection, doc, setDoc, getDocs, getDoc, updateDoc, runTransaction, serverTimestamp, query, where } from './firebase';
 import { uploadJSONToCloudinary, fetchJSONFromCloudinary } from './cloudinary';
-import { validateCheckIn, CheckInSecurityContext, SessionSecurityConfig } from './security';
+import { validateCheckIn, isDemoMode, CheckInSecurityContext, SessionSecurityConfig } from './security';
 import { collections } from './collections';
 
 // Re-export for backward compatibility
@@ -33,7 +33,7 @@ export async function checkInStudent(
   if (!sessionDoc.exists()) throw new Error('Session not found');
   const sessionData = sessionDoc.data();
 
-  if (sessionData.status !== 'open') throw new Error('Session is closed');
+  if (sessionData.status !== 'open' && !isDemoMode()) throw new Error('Session is closed');
 
   // Use the uid field from the user object (the original student ID like KAB/101/2023)
   const studentId = studentData.uid || studentData.id;
@@ -92,6 +92,8 @@ export async function checkInStudent(
       status
     });
   });
+
+  return { warnings: securityResult.warnings };
 }
 
 export async function archiveSession(sessionId: string, csvData?: string) {

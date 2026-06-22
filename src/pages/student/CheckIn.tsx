@@ -4,10 +4,24 @@ import { useNavigate } from 'react-router-dom';
 import { Scanner } from '@yudiel/react-qr-scanner';
 import { useAuth } from '../../hooks/useAuth';
 import { checkInStudent } from '../../lib/db';
-import { CheckInSecurityContext } from '../../lib/security';
+import { CheckInSecurityContext, isDemoMode } from '../../lib/security';
 import { validateTOTP } from '../../lib/totp';
 import { db, doc, getDoc } from '../../lib/firebase';
 import { collections } from '../../lib/db';
+
+function parseSessionTimeToDate(timeStr: string | null | undefined, dateBase: Date = new Date()): Date | null {
+  if (!timeStr) return null;
+  const match = timeStr.match(/(\d{1,2}):(\d{2})(?:\s*(AM|PM))?/i);
+  if (!match) return null;
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const modifier = match[3]?.toUpperCase();
+  if (modifier === 'PM' && hours < 12) hours += 12;
+  if (modifier === 'AM' && hours === 12) hours = 0;
+  const d = new Date(dateBase);
+  d.setHours(hours, minutes, 0, 0);
+  return d;
+}
 
 export default function CheckIn() {
   const [scanned, setScanned] = useState(false);
@@ -99,37 +113,85 @@ export default function CheckIn() {
       const sessionEndTime = sessionData.endTime;
       const hasTotpSecret = !!sessionData.totpSecret;
 
+      const now = new Date();
+      const startDate = parseSessionTimeToDate(sessionStartTime);
+      const endDate = parseSessionTimeToDate(sessionEndTime);
+
       console.log('[CheckIn] Session data fetched', {
         sessionId,
         status: sessionStatus,
-        startTime: sessionStartTime,
-        endTime: sessionEndTime,
+        startTimeRaw: sessionStartTime,
+        endTimeRaw: sessionEndTime,
+        startDate: startDate?.toISOString() ?? null,
+        endDate: endDate?.toISOString() ?? null,
+        nowUTC: now.toISOString(),
+        nowLocal: now.toString(),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         hasTotpSecret,
         createdAt: sessionData.createdAt?.toDate?.()?.toISOString?.() ?? 'N/A',
       });
 
-      if (sessionStatus !== 'open') throw new Error('This session is no longer accepting check-ins.');
+      // 2. Session time boundary validation (authoritative expiry check)
+      // DEMO MODE: skip session time boundary validation
+      if (!isDemoMode()) {
+        if (startDate && now.getTime() < startDate.getTime()) {
+          console.warn('[CheckIn] Session has not started yet', {
+            now: now.toISOString(),
+            sessionStart: startDate.toISOString(),
+            diffMs: startDate.getTime() - now.getTime(),
+          });
+          throw new Error('This session has not started yet. Please wait for the lecturer to begin.');
+        }
 
-      // 2. Validate TOTP token with full logging
+        if (endDate && now.getTime() > endDate.getTime()) {
+          console.warn('[CheckIn] Session has ended', {
+            now: now.toISOString(),
+            sessionEnd: endDate.toISOString(),
+            diffMs: now.getTime() - endDate.getTime(),
+          });
+          throw new Error('QR code has expired. The session time has ended.');
+        }
+
+        if (sessionStatus !== 'open') throw new Error('This session is no longer accepting check-ins.');
+      }
+
+      // 3. Validate TOTP token with full logging
+      const timeRemaining = endDate
+        ? Math.round((endDate.getTime() - now.getTime()) / 1000 / 60)
+        : null;
+
       console.log('[CheckIn] Starting TOTP validation', {
         tokenReceived: token,
         totpSecretPresent: hasTotpSecret,
+        timeRemainingMinutes: timeRemaining,
+        sessionActiveWindowMs: endDate && startDate
+          ? endDate.getTime() - startDate.getTime()
+          : null,
       });
 
-      const totpValid = validateTOTP(sessionData.totpSecret, token);
+      // DEMO MODE: skip TOTP validation
+      if (!isDemoMode()) {
+        const totpValid = validateTOTP(sessionData.totpSecret, token);
 
-      if (!totpValid) {
-        console.error('[CheckIn] TOTP validation failed — QR rejected', {
-          sessionId,
-          tokenReceived: token,
-          scanTime: new Date(scanTimestamp).toISOString(),
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          deviceTime: new Date().toISOString(),
-        });
-        throw new Error('QR code has expired. Please ask your lecturer to refresh the QR code and try again.');
+        if (!totpValid) {
+          console.error('[CheckIn] TOTP validation failed — token rejected', {
+            sessionId,
+            tokenReceived: token,
+            scanTime: new Date(scanTimestamp).toISOString(),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            deviceTime: new Date().toISOString(),
+            timeRemainingMinutes: timeRemaining,
+            now: now.toISOString(),
+            sessionStart: startDate?.toISOString(),
+            sessionEnd: endDate?.toISOString(),
+          });
+          throw new Error('QR security token is no longer valid. Please scan a fresh QR code from the lecturer\'s display.');
+        }
       }
 
-      console.log('[CheckIn] TOTP validation passed — proceeding to security checks');
+      console.log('[CheckIn] TOTP validation passed — proceeding to security checks', {
+        timeRemainingMinutes: timeRemaining,
+      });
 
       // 3. Collect security context (GPS + IP in parallel)
       const [coordinates, ipAddress] = await Promise.all([
@@ -145,7 +207,11 @@ export default function CheckIn() {
       };
 
       // 4. Write Attendance with security validation
-      await checkInStudent(sessionId, user, token, deviceFingerprint, securityContext);
+      const result = await checkInStudent(sessionId, user, token, deviceFingerprint, securityContext);
+
+      if (result?.warnings && result.warnings.length > 0) {
+        setSecurityWarnings(result.warnings);
+      }
 
       setCheckedInSession(sessionData);
       setScanned(true);
@@ -181,6 +247,19 @@ export default function CheckIn() {
             <School className="w-4 h-4 text-primary shrink-0" />
             <span className="text-on-surface font-medium truncate">
               Checking in as <strong>{user.name}</strong> <span className="text-on-surface-variant font-mono text-xs">({user.uid})</span>
+            </span>
+          </div>
+        )}
+
+        {isDemoMode() && (
+          <div className="w-full mb-4 rounded-xl px-4 py-2.5 flex items-center justify-between text-xs font-medium" style={{ background: 'rgba(45,122,79,0.12)', border: '1px solid rgba(45,122,79,0.3)', color: 'var(--success, #2D7A4F)' }}>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block w-2 h-2 rounded-full bg-current animate-pulse"></span>
+              Demo Mode
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle className="w-3.5 h-3.5" />
+              Location Verified
             </span>
           </div>
         )}

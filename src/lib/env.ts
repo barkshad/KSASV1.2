@@ -22,6 +22,7 @@ interface EnvConfig {
   app: {
     name: string;
     url: string;
+    demoMode: boolean;
   };
 }
 
@@ -41,6 +42,7 @@ const FALLBACKS = {
   VITE_CLOUDINARY_FOLDER_PREFIX: 'ksas/',
   VITE_APP_NAME: 'KSAS',
   VITE_APP_URL: 'http://localhost:3000',
+  VITE_DEMO_MODE: 'true',
 } as const;
 
 function getVar(key: keyof typeof FALLBACKS): string {
@@ -71,6 +73,7 @@ function buildEnv(): EnvConfig {
     app: {
       name: getVar('VITE_APP_NAME'),
       url: getVar('VITE_APP_URL'),
+      demoMode: getVar('VITE_DEMO_MODE') === 'true',
     },
   };
 }

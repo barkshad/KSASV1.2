@@ -13,6 +13,19 @@
 import { db, doc, getDoc, setDoc, collection, query, where, getDocs } from './firebase';
 import { collections } from './collections';
 
+// ── DEMO MODE ────────────────────────────────────────────────────────────────
+// TEMPORARY: Set to false to restore ALL security checks immediately.
+// When true, ALL validation failures are bypassed (QR expiry, GPS, IP,
+// device binding, timestamp, token consumption) while essential checks
+// (student login, session existence, course existence) are still enforced.
+// Every demo-only change is marked with "// DEMO MODE:" for easy removal.
+// Changing this to false requires NO other code changes.
+const DEMO_MODE = true;
+
+export function isDemoMode(): boolean {
+  return DEMO_MODE;
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 export interface CheckInSecurityContext {
   deviceFingerprint: string;
@@ -120,6 +133,21 @@ function validateGpsProximity(
   latitude: number | null | undefined,
   longitude: number | null | undefined
 ): SecurityValidationResult {
+  // DEMO MODE: simulate successful proximity verification
+  if (DEMO_MODE) {
+    let distance: number | null = null;
+    if (latitude != null && longitude != null && config.campusLat && config.campusLng) {
+      distance = haversineDistance(latitude, longitude, config.campusLat, config.campusLng);
+    }
+    return {
+      allowed: true,
+      warnings: [
+        'Demo Mode: Location verification simulated successfully.',
+        ...(distance != null ? [`Distance calculated: ${Math.round(distance)}m`] : ['GPS coordinates unavailable — simulated']),
+      ],
+    };
+  }
+
   if (!config.requireGps) {
     if (latitude != null && longitude != null && config.campusLat && config.campusLng) {
       const distance = haversineDistance(latitude, longitude, config.campusLat, config.campusLng);
@@ -227,6 +255,14 @@ export async function validateCheckIn(
 ): Promise<SecurityValidationResult> {
   const config = { ...DEFAULT_SECURITY_CONFIG, ...sessionConfig };
   const warnings: string[] = [];
+
+  // ── DEMO MODE: bypass all 5 security layers ──
+  if (DEMO_MODE) {
+    return {
+      allowed: true,
+      warnings: ['Demo Mode: All security checks bypassed for demonstration.'],
+    };
+  }
 
   // Layer 2: Token consumption (must be first — prevents replay attacks)
   const tokenResult = await validateAndConsumeToken(sessionId, token);
